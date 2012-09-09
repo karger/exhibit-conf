@@ -26,10 +26,12 @@ ExhibitConf.settings.facets = {
 
 };
 
-ExhibitConf.settings.viewPanel = {label: "View Panel",
-                                  specs: {initialView: {type: "int",
-                                                        defaultValue: 0}}
-                                 };
+ExhibitConf.settings.viewPanel = {
+    "viewPanel": {label: "View Panel",
+                  specs: {initialView: {type: "int",
+                                        defaultValue: 0}}
+                 }
+};
 
 ExhibitConf.nameAttribute = function(elmt, name) {
     elmt = Exhibit.jQuery(elmt);
@@ -226,7 +228,7 @@ Exhibit.includeScript(function() {
         return deferred.promise();
     };
 
-    configureElement = function(elt) {
+    var configureElement = function(elt) {
         var specs, comp, className, title, field, eField, promise,
         settings = {},
         role = Exhibit.getRoleAttribute(elt);
