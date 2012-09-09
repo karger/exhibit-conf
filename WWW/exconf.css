@@ -1,0 +1,11 @@
+.exhibit-editing {
+  border: 3px solid red;
+  position: relative
+}
+
+.exhibit-edit-tab {
+  position: absolute;
+  top:0;
+  right:0;
+  z-index: 1000;
+}
