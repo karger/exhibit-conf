@@ -1,5 +1,4 @@
 ExhibitConf = {settings: {}};
-EC = ExhibitConf;
 
 ExhibitConf.settings.views = {
     "TileView": {label: "List", superclassName: "OrderedViewFrame"},
