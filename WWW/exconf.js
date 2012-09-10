@@ -34,7 +34,7 @@ ExhibitConf.settings.viewPanel = {
 };
 
 ExhibitConf.nameAttribute = function(elmt, name) {
-    elmt = Exhibit.jQuery(elmt);
+    elmt = $(elmt);
 
     if (elmt.attr(name) !== undefined) {
         return name;
@@ -48,7 +48,7 @@ ExhibitConf.nameAttribute = function(elmt, name) {
 
 Exhibit.includeScript(function() {
     var i, 
-    $=Exhibit.jQuery,
+    $=$,
     EC = ExhibitConf;
 
     EC.configureSettingSpecs = function() {
@@ -338,7 +338,6 @@ Exhibit.includeScript(function() {
         };
 
         EC.stopEdit = function () {
-            $('body').off('mouseover','.exhibit-facet',showEditButton);
             $('body').off('mouseover','.exhibit-editable',showEditButton);
 	    editButton.off('click',EC.handleEditClick); //remove since re-add
             EC.unrender(document);
@@ -346,8 +345,8 @@ Exhibit.includeScript(function() {
         };
     })();
 
-    $(document).one("onBeforeLoadingItems.exhibit",function () {
-        EC.markExhibit();
-        EC.configureSettingSpecs();
-    });
+//    $(document).one("onBeforeLoadingItems.exhibit",function () {
+//        EC.markExhibit();
+//        EC.configureSettingSpecs();
+//    });
 });
