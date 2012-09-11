@@ -46,10 +46,8 @@ ExhibitConf.nameAttribute = function(elmt, name) {
 };
 
 
-Exhibit.includeScript(function() {
-    var i, 
-    $=$,
-    EC = ExhibitConf;
+(function() {
+    var EC = ExhibitConf;
 
     EC.configureSettingSpecs = function() {
 
@@ -228,7 +226,7 @@ Exhibit.includeScript(function() {
         return deferred.promise();
     };
 
-    var configureElement = function(elt) {
+    EC.configureElement = function(elt) {
         var specs, comp, className, title, field, eField, promise,
         settings = {},
         role = Exhibit.getRoleAttribute(elt);
@@ -345,8 +343,8 @@ Exhibit.includeScript(function() {
         };
     })();
 
-//    $(document).one("onBeforeLoadingItems.exhibit",function () {
-//        EC.markExhibit();
-//        EC.configureSettingSpecs();
-//    });
-});
+    $(document).one("onBeforeLoadingItems.exhibit",function () {
+        EC.markExhibit();
+        EC.configureSettingSpecs();
+    });
+})();

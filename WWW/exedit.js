@@ -1,4 +1,3 @@
-ExhibitConf = {};
 ExhibitConf.Editor = {};
 
 (function () {
@@ -21,7 +20,7 @@ ExhibitConf.Editor = {};
 	configMenuBar('.topnav', {"new-button":  todo,
 				  "open-button": todo,
 				  "save-button": todo,
-				  "edit-exhibit-button": todo,
+				  "edit-exhibit-button": ExhibitConf.startEdit,
 				  "edit-lens-button": todo,
 				  "edit-data-button": todo,
 				  "help-button": todo,
