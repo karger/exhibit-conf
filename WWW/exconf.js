@@ -62,6 +62,9 @@ ExhibitConf.nameAttribute = function(elmt, name) {
             if (!comp.label) {
                 comp.label = humanize(className);
             }
+	    if (!comp.specs) {
+		comp.specs = {};
+	    }
             if (classFinder(className)) {
                 $.extend(comp.specs, classFinder(className)._settingSpecs);
             }
@@ -280,6 +283,58 @@ ExhibitConf.nameAttribute = function(elmt, name) {
 	return promise;
     };
 
+
+
+    EC.configureData = function() {
+	var link = $('[rel="exhibit/data"]'),
+	linkVal = link.attr('href'),
+	linkType = link.attr('type'),
+	linkField = $('<input type="textfield" width="50"></input>'),
+	typeField = $('<select></select>')
+	    .append('<option value="application/json">JSON</option>')
+	    .append('<option value="application/jsonp">JSONP</option>'),
+	instructions = $('<div><div>').text('Enter data URL'),
+	dialog = $('<div></div>').append(instructions)
+	    .append(linkField)
+	    .append(typeField)
+	    .val(linkType),
+	saveLinks = function() {
+	    dialog.dialog('close');
+	    if (link === null) {
+		link = $('<link rel="exhibit/data">').appendTo('head');
+	    }
+	    if (linkVal !== linkField.val()
+		|| linkType !== typeField.val()) {
+		link.attr('href',linkField.val());
+		if (typeField.val()) {
+		    link.attr('type',typeField.val());
+		}
+		EC.reinit();
+	    }
+	};
+
+	if (link.length > 0) {
+	    linkField.val(linkVal);
+	    typeField.val(linkType);
+	};
+
+	dialog.dialog({
+            title: 'Edit Data Link',
+            width: 400,
+	    height: 300,
+            modal: true, 
+            buttons: {
+		"OK": saveLinks,
+		"Cancel": function() { 
+                    $(this).dialog('close');
+		},
+            }
+	});
+	
+
+    }
+
+
     EC.unrender = function(dom) {
         dom = $(dom || document);
         dom.find('.exhibit-controlPanel').remove();
@@ -299,15 +354,26 @@ ExhibitConf.nameAttribute = function(elmt, name) {
         $('[ex\\:role]').addClass('exhibit-editable');
     };
 
+    EC.rerender = function() {
+	EC.unrender(document);
+	window.exhibit.configureFromDOM();
+    }
+
+    EC.reinit = function() {
+	EC.unrender(document);
+	window.database.removeAllStatements();
+        window.database.loadLinks(function() {
+	    //need to set proper 'this" on configure call
+	    window.exhibit.configureFromDOM();
+	});
+    }
+
     EC.handleEditClick = function(event) {
         var button = $(event.target),
         elt = button.parent();
 
         button.detach();
-        configureElement(elt).done(function() {
-		EC.unrender(document);
-		window.exhibit.configureFromDOM();
-	    });
+        EC.configureElement(elt).done(EC.rerender);
     };
 
 
@@ -326,6 +392,7 @@ ExhibitConf.nameAttribute = function(elmt, name) {
 
         EC.startEdit = function() {
 	    EC.markExhibit();
+	    $('body').addClass('exhibit-editing');
 	    editButton.click(EC.handleEditClick); //shouldn't have to
 						  //re-add this every
 						  //time but handler is
@@ -337,6 +404,7 @@ ExhibitConf.nameAttribute = function(elmt, name) {
 
         EC.stopEdit = function () {
             $('body').off('mouseover','.exhibit-editable',showEditButton);
+	    $('body').removeClass('exhibit-editing');
 	    editButton.off('click',EC.handleEditClick); //remove since re-add
             EC.unrender(document);
             window.exhibit.configureFromDOM();
@@ -344,7 +412,6 @@ ExhibitConf.nameAttribute = function(elmt, name) {
     })();
 
     $(document).one("onBeforeLoadingItems.exhibit",function () {
-        EC.markExhibit();
         EC.configureSettingSpecs();
     });
 })();

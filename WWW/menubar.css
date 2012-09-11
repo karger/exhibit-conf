@@ -18,6 +18,7 @@
     background: #f5f5f5;
 }
 
+/*needs to match heigh of topnav bar*/
 .topnav-spacer {
     clear: both;
     height: 30px;

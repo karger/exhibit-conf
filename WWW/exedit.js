@@ -22,7 +22,7 @@ ExhibitConf.Editor = {};
 				  "save-button": todo,
 				  "edit-exhibit-button": ExhibitConf.startEdit,
 				  "edit-lens-button": todo,
-				  "edit-data-button": todo,
+				  "edit-data-button": ExhibitConf.configureData,
 				  "help-button": todo,
 				  "wizard-button": todo
 				 });
