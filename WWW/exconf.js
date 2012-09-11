@@ -3,7 +3,14 @@ ExhibitConf = {settings: {}};
 ExhibitConf.settings.views = {
     "TileView": {label: "List", superclassName: "OrderedViewFrame"},
     "ThumbnailView": {superclassName: "OrderedViewFrame"},
-    "TimelineView": {}
+    "TimelineView": {
+	specs: {
+	    "colorKey": {type: "text"},
+	    "iconKey": {type: "text"},
+	    "eventLabel": {type: "text"},
+	    "caption": {type: "text"}
+	}
+    }
 };
 
 ExhibitConf.settings.facets = {
@@ -223,7 +230,7 @@ ExhibitConf.nameAttribute = function(elmt, name) {
                           },
 		        "modal": true, 
 			"title": title,
-                        "width": "500"
+                        "width": "550"
 
                       });
         return deferred.promise();
@@ -282,8 +289,6 @@ ExhibitConf.nameAttribute = function(elmt, name) {
         });
 	return promise;
     };
-
-
 
     EC.configureData = function() {
 	var link = $('[rel="exhibit/data"]'),

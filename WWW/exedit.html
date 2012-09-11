@@ -8,6 +8,8 @@
     <script src="http://code.jquery.com/ui/1.8.23/jquery-ui.min.js"></script>
     <link rel="stylesheet" href="http://code.jquery.com/ui/1.8.23/themes/smoothness/jquery-ui.css" type="text/css"/>
     <script src="http://people.csail.mit.edu/karger/Exhibit3/api/exhibit-api.js"></script>
+    <script src="http://people.csail.mit.edu/karger/Exhibit3/api/extensions/time/time-extension.js"></script>
+    
     <link rel="exhibit/data" href="nobelists.js">
     <script src="exconf.js"></script>
     <link rel="stylesheet" href="exconf.css">
@@ -34,6 +36,14 @@
 	  <li><a href="#" class="edit-data-button">Edit Data Links</a></li>
 	</ul>
       </li>
+      <li class='insert-menu'>
+	<a href="#">Insert</a>
+	<ul class="subnav">
+	  <li><a href="#" class="add-viewpanel-button">View Panel</a></li>
+	  <li><a href="#" class="add-view-button">View</a></li>
+	  <li><a href="#" class="add-facet-button">Facet</a></li>
+	</ul>
+      </li>
       <li class='help-menu'>
 	<a href="#">Help</a>
 	<ul class="subnav">
@@ -52,7 +62,9 @@
 	<tr>
 	  <td>
 	    <div id="view-container">
-	      <div ex:role="view"></div>
+	      <div id="view-panel" ex:role="viewPanel">
+		<div ex:role="view" ex:viewClass="TileView"></div>
+	      </div>
 	    </div>
 	  </td>
 	  <td style="vertical-align: top">

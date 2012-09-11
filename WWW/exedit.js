@@ -15,7 +15,30 @@ ExhibitConf.Editor = {};
     },
 
     todo = function() {alert('todo');};
+
     
+
+    EE.addComponent = function(component, parent) {
+	config = ExhibitConf.configureElement(component);
+	parent.append(component);
+	config.done(ExhibitConf.rerender);
+	config.fail(function() {
+	    component.remove();
+	});
+    };
+    
+
+    EE.addFacet = function() {
+	EE.addComponent($('<div ex:role="facet"></div>'),
+			$('#facet-container'));
+    };
+
+    EE.addView = function() {
+	EE.addComponent($('<div ex:role="view"></div>'),
+			$('#view-panel'));
+    };
+
+
     $(document).ready(function() {
 	configMenuBar('.topnav', {"new-button":  todo,
 				  "open-button": todo,
@@ -24,7 +47,10 @@ ExhibitConf.Editor = {};
 				  "edit-lens-button": todo,
 				  "edit-data-button": ExhibitConf.configureData,
 				  "help-button": todo,
-				  "wizard-button": todo
+				  "wizard-button": todo,
+				  "add-viewpanel-button": todo,
+				  "add-view-button": EE.addView,
+				  "add-facet-button": EE.addFacet
 				 });
     });
 })();
