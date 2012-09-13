@@ -290,6 +290,7 @@ ExhibitConf.nameAttribute = function(elmt, name) {
 	return promise;
     };
 
+
     EC.configureData = function() {
 	var link = $('[rel="exhibit/data"]'),
 	linkVal = link.attr('href'),
@@ -361,11 +362,13 @@ ExhibitConf.nameAttribute = function(elmt, name) {
 
     EC.rerender = function() {
 	EC.unrender(document);
+	Exhibit.History.eraseState();
 	window.exhibit.configureFromDOM();
     }
 
     EC.reinit = function() {
 	EC.unrender(document);
+	Exhibit.History.eraseState();
 	window.database.removeAllStatements();
         window.database.loadLinks(function() {
 	    //need to set proper 'this" on configure call
@@ -373,12 +376,31 @@ ExhibitConf.nameAttribute = function(elmt, name) {
 	});
     }
 
+    EC.findFacet = function (elt) {
+	var i,
+	collection = window.exhibit.getUIContext().getCollection(),
+	facets = collection._facets;
+
+	elt = elt.get(0);
+	for (i=0; i<facets.length; i++) {
+	    if (facets[i]._dom.elmt.get(0) === elt) {
+		return facets[i];
+	    }
+	}
+	alert("can't find facet!");
+    }
+
     EC.handleEditClick = function(event) {
-        var button = $(event.target),
+        var button = $(event.target), f,
         elt = button.parent();
 
         button.detach();
-        EC.configureElement(elt).done(EC.rerender);
+        EC.configureElement(elt).done(function () {
+	    if (Exhibit.getRoleAttribute(elt) === 'facet') {
+		f = EC.findFacet(elt);
+		f.dispose();
+	    }
+	    EC.rerender()});
     };
 
 

@@ -35,11 +35,27 @@ ExhibitConf.Editor = {};
 
     EE.addView = function() {
 	EE.addComponent($('<div ex:role="view"></div>'),
-			$('#view-panel'));
+			$('.main-panel'));
     };
 
 
     $(document).ready(function() {
+	var maybeSetData = function() {
+	    var i, url, arg,
+	    link = $('[rel="exhibit/data"]'),
+	    args = window.location.search.substr(1).split('&');
+
+	    for (i=0; i<args.length; i++) {
+		arg = args[i];
+		if (arg.substr(0,3) === "data") {
+		    link.attr('href',arg.substr(4));
+		} else if (arg.substr(0,3) === "type") {
+		    link.attr('type',arg.substr(5));
+		} 
+	    }
+	}
+	    
+	maybeSetData();
 	configMenuBar('.topnav', {"new-button":  todo,
 				  "open-button": todo,
 				  "save-button": todo,
@@ -52,5 +68,6 @@ ExhibitConf.Editor = {};
 				  "add-view-button": EE.addView,
 				  "add-facet-button": EE.addFacet
 				 });
+
     });
 })();

@@ -7,7 +7,7 @@
     <script src="http://code.jquery.com/jquery-1.8.1.min.js"></script>
     <script src="http://code.jquery.com/ui/1.8.23/jquery-ui.min.js"></script>
     <link rel="stylesheet" href="http://code.jquery.com/ui/1.8.23/themes/smoothness/jquery-ui.css" type="text/css"/>
-    <script src="http://people.csail.mit.edu/karger/Exhibit3/api/exhibit-api.js"></script>
+    <script src="http://people.csail.mit.edu/karger/Exhibit3/api/exhibit-api.js?bundle=false"></script>
     <script src="http://people.csail.mit.edu/karger/Exhibit3/api/extensions/time/time-extension.js"></script>
     
     <link rel="exhibit/data" href="nobelists.js">
@@ -31,9 +31,9 @@
       <li class='edit-menu'>
 	<a href="#">Edit</a>
 	<ul class="subnav">
-	  <li><a href="#" class="edit-exhibit-button">Edit Page</a></li>
-	  <li><a href="#" class="edit-lens-button">Edit Lenses</a></li>
-	  <li><a href="#" class="edit-data-button">Edit Data Links</a></li>
+	  <li><a href="#" class="edit-exhibit-button">Page</a></li>
+	  <li><a href="#" class="edit-lens-button">Lenses</a></li>
+	  <li><a href="#" class="edit-data-button">Data Links</a></li>
 	</ul>
       </li>
       <li class='insert-menu'>
@@ -61,11 +61,9 @@
       <table>
 	<tr>
 	  <td>
-	    <div id="view-container">
-	      <div id="view-panel" ex:role="viewPanel">
+	      <div ex:role="viewPanel" class="main-panel">
 		<div ex:role="view" ex:viewClass="TileView"></div>
 	      </div>
-	    </div>
 	  </td>
 	  <td style="vertical-align: top">
 	    <div id="facet-container" style="width: 200px" >
