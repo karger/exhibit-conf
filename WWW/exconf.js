@@ -46,7 +46,9 @@ ExhibitConf.settings.viewPanel = {
 
 
 (function() {
-    var EC = ExhibitConf;
+    var EC = ExhibitConf,
+    nameAttribute, configureSettingSpecs, makeSettingsTable, settingsDialog,
+    configureElement, markExhibit, reinit, findFacet, handleEditClick;
 
     nameAttribute = function(elmt, name) {
 	elmt = $(elmt);
@@ -381,7 +383,7 @@ ExhibitConf.settings.viewPanel = {
 	EC.unrender(document);
 	Exhibit.History.eraseState();
 	window.exhibit.configureFromDOM();
-    }
+    };
 
     reinit = function(win) {
 	win = win || window;
@@ -408,7 +410,7 @@ ExhibitConf.settings.viewPanel = {
 	    }
 	}
 	alert("can't find facet!");
-    }
+    };
 
     handleEditClick = function(event) {
         var button = $(event.target), f,
