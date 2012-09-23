@@ -134,7 +134,7 @@ ExhibitConf.Editor = {};
 	configMenuBar($('.topnav'), {"new-button":  todo,
 				     "open-button": EE.open,
 				     "save-button": EE.saveAs,
-				     "preview-button": EE.cleanup,
+				     "preview-button": EE.preview,
 				     "edit-exhibit-button": EE.editPage,
 				     "edit-lens-button": EE.editLens,
 				     "edit-data-button": ExhibitConf.configureData,

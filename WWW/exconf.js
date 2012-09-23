@@ -1,5 +1,6 @@
 //Configuration of editor
-ExhibitConf = {settings: {}};
+ExhibitConf = {initialized: false,
+	       settings: {}};
 
 ExhibitConf.settings.views = {
     "TileView": {label: "List", superclassName: "OrderedViewFrame"},
@@ -43,24 +44,25 @@ ExhibitConf.settings.viewPanel = {
                  }
 };
 
-ExhibitConf.nameAttribute = function(elmt, name) {
-    elmt = $(elmt);
-
-    if (elmt.attr(name) !== undefined) {
-        return name;
-    } else if (elmt.attr("data-ex-" + name)) {
-        return "data-ex-" + name;
-    } else {
-        return "ex:" + name;
-    } 
-};
-
 
 (function() {
     var EC = ExhibitConf;
 
+    nameAttribute = function(elmt, name) {
+	elmt = $(elmt);
+
+	if (elmt.attr(name) !== undefined) {
+            return name;
+	} else if (elmt.attr("data-ex-" + name)) {
+            return "data-ex-" + name;
+	} else {
+            return "ex:" + name;
+	} 
+    };
+
+
 //configuring the configurator
-    EC.configureSettingSpecs = function() {
+    configureSettingSpecs = function() {
 
         var className,
 
@@ -69,6 +71,7 @@ ExhibitConf.nameAttribute = function(elmt, name) {
                 return  str.split(/\?=[A-Z]/g).join(' ');
             };
 
+	    console.log(className);
             comp.className = className;
             if (!comp.label) {
                 comp.label = humanize(className);
@@ -103,7 +106,7 @@ ExhibitConf.nameAttribute = function(elmt, name) {
         }
     };
 
-    EC.makeSettingsTable = function(specs, settings) {
+    makeSettingsTable = function(specs, settings) {
 
         var field,
         table = $('<table></table>'),
@@ -190,7 +193,7 @@ ExhibitConf.nameAttribute = function(elmt, name) {
     };
 
     //create a dialog that destructively modifies exhibit component settings
-    EC.settingsDialog = function(comp, title, settings) {
+    settingsDialog = function(comp, title, settings) {
         var className,
         deferred = $.Deferred(),
         //dummy tab is a hack due to tabs oddness: select event is not called
@@ -215,7 +218,7 @@ ExhibitConf.nameAttribute = function(elmt, name) {
             settings.className = $(ui.tab).data("class-name");
             $(ui.panel).empty()
                 .append(
-                    EC.makeSettingsTable(EC.settings[comp][settings.className].specs,
+                    makeSettingsTable(EC.settings[comp][settings.className].specs,
                                      settings));
             return true;
         }});
@@ -239,7 +242,7 @@ ExhibitConf.nameAttribute = function(elmt, name) {
         return deferred.promise();
     };
 
-    EC.configureElement = function(elt) {
+    configureElement = function(elt) {
         var specs, comp, className, title, field, eField, promise,
         settings = {},
         role = Exhibit.getRoleAttribute(elt);
@@ -261,18 +264,26 @@ ExhibitConf.nameAttribute = function(elmt, name) {
             className = "viewPanel";
             break;
         }
-        
+	
+	if (!EC.initialized) {
+            configureSettingSpecs();
+	    EC.initialized=true;
+	}
+
         specs = EC.settings[comp][className].specs;
         Exhibit.SettingsUtilities.collectSettingsFromDOM(elt, specs, settings);
 
 	settings.className = className;
-        promise = EC.settingsDialog(comp, title, settings);
+        promise = settingsDialog(comp, title, settings);
 
 	promise.done(function () {
             //settings have been updated; push to element.  preserves 
             //non-conflicting settings; useful if switch back to
             //previous facet/view class.
             var field, eField;
+
+	    //reset to settings for new class
+	    specs = EC.settings[comp][settings.className].specs;
             if (comp === 'facets') {
                 elt.attr('ex:facetClass',settings.className);
             } else if (comp === 'views') {
@@ -281,7 +292,7 @@ ExhibitConf.nameAttribute = function(elmt, name) {
 	    delete settings.className; //so won't make an attribute
             for (field in specs) {
                 if (specs.hasOwnProperty(field)) {
-                    eField = EC.nameAttribute(comp,field);
+                    eField = nameAttribute(comp,field);
                     if (settings[field] === specs[field].defaultValue) {
                         elt.removeAttr(eField);
                     } else {
@@ -319,7 +330,7 @@ ExhibitConf.nameAttribute = function(elmt, name) {
 		    link.attr('type',typeField.val());
 		};
 		Exhibit.Lens._commonProperties = null; //clear cache
-		EC.reinit();
+		reinit();
 	    }
 	    
 	};
@@ -348,6 +359,7 @@ ExhibitConf.nameAttribute = function(elmt, name) {
     EC.unrender = function(dom) {
         dom = $(dom || document);
         dom.find('.exhibit-controlPanel').remove();
+        dom.find('.exhibit-toolboxWidget-popup').remove();
         dom.find('[ex\\:role="facet"]').empty().removeClass('exhibit-facet');
         dom.find('[ex\\:role="view"]')
             .removeClass('exhibit-view')
@@ -360,7 +372,7 @@ ExhibitConf.nameAttribute = function(elmt, name) {
             .remove();
     };
     
-    EC.markExhibit = function() {
+    markExhibit = function() {
         $('[ex\\:role="view"]').addClass('exhibit-editable');
         $('[ex\\:role="facet"]').addClass('exhibit-editable');
     };
@@ -371,7 +383,7 @@ ExhibitConf.nameAttribute = function(elmt, name) {
 	window.exhibit.configureFromDOM();
     }
 
-    EC.reinit = function(win) {
+    reinit = function(win) {
 	win = win || window;
 	EC.unrender(win.document);
 	Exhibit.History.eraseState();
@@ -383,7 +395,7 @@ ExhibitConf.nameAttribute = function(elmt, name) {
 	});
     }
 
-    EC.findFacet = function (elt,w) {
+    findFacet = function (elt,w) {
 	var i, 
 	win = w || window,
 	collection = win.exhibit.getUIContext().getCollection(),
@@ -398,14 +410,14 @@ ExhibitConf.nameAttribute = function(elmt, name) {
 	alert("can't find facet!");
     }
 
-    EC.handleEditClick = function(event) {
+    handleEditClick = function(event) {
         var button = $(event.target), f,
         elt = button.parent();
 
         button.detach();
-        EC.configureElement(elt).done(function () {
+        configureElement(elt).done(function () {
 	    if (Exhibit.getRoleAttribute(elt) === 'facet') {
-		f = EC.findFacet(elt);
+		f = findFacet(elt);
 		f.dispose();
 	    }
 	    EC.rerender()});
@@ -576,9 +588,9 @@ ExhibitConf.nameAttribute = function(elmt, name) {
 
 
         EC.startEdit = function() {
-	    EC.markExhibit();
+	    markExhibit();
 	    $('body').addClass('exhibit-editing');
-	    editButton.click(EC.handleEditClick); //shouldn't have to
+	    editButton.click(handleEditClick); //shouldn't have to
 						  //re-add this every
 						  //time but handler is
 						  //somehow getting
@@ -590,13 +602,9 @@ ExhibitConf.nameAttribute = function(elmt, name) {
         EC.stopEdit = function () {
             $('body').off('mouseover','.exhibit-editable',showEditButton);
 	    $('body').removeClass('exhibit-editing');
-	    editButton.off('click',EC.handleEditClick); //remove since re-add
+	    editButton.off('click',handleEditClick); //remove since re-add
             EC.unrender(document);
             window.exhibit.configureFromDOM();
         };
     })();
-
-    $(document).one("onBeforeLoadingItems.exhibit",function () {
-        EC.configureSettingSpecs();
-    });
 })();
