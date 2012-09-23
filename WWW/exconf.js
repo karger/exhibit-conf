@@ -1,3 +1,4 @@
+//Configuration of editor
 ExhibitConf = {settings: {}};
 
 ExhibitConf.settings.views = {
@@ -5,6 +6,8 @@ ExhibitConf.settings.views = {
     "ThumbnailView": {superclassName: "OrderedViewFrame"},
     "TimelineView": {
 	specs: {
+	    "start": {type: "text"},
+	    "end": {type: "text"},
 	    "colorKey": {type: "text"},
 	    "iconKey": {type: "text"},
 	    "eventLabel": {type: "text"},
@@ -56,6 +59,7 @@ ExhibitConf.nameAttribute = function(elmt, name) {
 (function() {
     var EC = ExhibitConf;
 
+//configuring the configurator
     EC.configureSettingSpecs = function() {
 
         var className,
@@ -185,7 +189,7 @@ ExhibitConf.nameAttribute = function(elmt, name) {
         return table;
     };
 
-    //creates a dialog that destructively modifies settings
+    //create a dialog that destructively modifies exhibit component settings
     EC.settingsDialog = function(comp, title, settings) {
         var className,
         deferred = $.Deferred(),
@@ -231,7 +235,6 @@ ExhibitConf.nameAttribute = function(elmt, name) {
 		        "modal": true, 
 			"title": title,
                         "width": "550"
-
                       });
         return deferred.promise();
     };
@@ -314,9 +317,11 @@ ExhibitConf.nameAttribute = function(elmt, name) {
 		link.attr('href',linkField.val());
 		if (typeField.val()) {
 		    link.attr('type',typeField.val());
-		}
+		};
+		Exhibit.Lens._commonProperties = null; //clear cache
 		EC.reinit();
 	    }
+	    
 	};
 
 	if (link.length > 0) {
@@ -340,7 +345,6 @@ ExhibitConf.nameAttribute = function(elmt, name) {
 
     }
 
-
     EC.unrender = function(dom) {
         dom = $(dom || document);
         dom.find('.exhibit-controlPanel').remove();
@@ -357,7 +361,8 @@ ExhibitConf.nameAttribute = function(elmt, name) {
     };
     
     EC.markExhibit = function() {
-        $('[ex\\:role]').addClass('exhibit-editable');
+        $('[ex\\:role="view"]').addClass('exhibit-editable');
+        $('[ex\\:role="facet"]').addClass('exhibit-editable');
     };
 
     EC.rerender = function() {
@@ -366,19 +371,22 @@ ExhibitConf.nameAttribute = function(elmt, name) {
 	window.exhibit.configureFromDOM();
     }
 
-    EC.reinit = function() {
-	EC.unrender(document);
+    EC.reinit = function(win) {
+	win = win || window;
+	EC.unrender(win.document);
 	Exhibit.History.eraseState();
-	window.database.removeAllStatements();
-        window.database.loadLinks(function() {
+	win.database.removeAllStatements();
+        win.database.loadLinks(function() {
 	    //need to set proper 'this" on configure call
-	    window.exhibit.configureFromDOM();
+	    //so can't just pass configureFromDOM
+	    win.exhibit.configureFromDOM();
 	});
     }
 
-    EC.findFacet = function (elt) {
-	var i,
-	collection = window.exhibit.getUIContext().getCollection(),
+    EC.findFacet = function (elt,w) {
+	var i, 
+	win = w || window,
+	collection = win.exhibit.getUIContext().getCollection(),
 	facets = collection._facets;
 
 	elt = elt.get(0);
@@ -403,6 +411,156 @@ ExhibitConf.nameAttribute = function(elmt, name) {
 	    EC.rerender()});
     };
 
+
+    EC.Lens = {};
+    EC.Lens.createChangeTracker = function(signature, handler, period) {
+	//invoke the returned function to deactivate the watcher
+	var current = signature(),
+	checkChange = function() {
+	    var next=signature();
+	    if (next !== current) {
+		current = next;
+		handler();
+	    }
+	},
+	timer = setInterval(checkChange, period || 100);
+	return (function() {
+	    clearInterval(timer);
+	});
+    };
+
+    EC.Lens.startEdit = function(lens, editContainer) {
+	var editor = Aloha.jQuery(editContainer.get(0)).empty(),
+	timer = null,
+	
+	cleanEditor = function() {
+//          for future, use Aloha api
+//	    var edited = editor.children().eq(0),
+//	    editId = edited.attr('id'),
+//	    content = Aloha.getEditableById(editId).getContents(true);
+
+//	    var copy = editor.clone();
+//	    copy.removeAttr('contenteditable');
+//		.removeClass('aloha-editable aloha-editable-active')
+	    return editor.html();
+	},
+
+	updateLens = function() {
+	    lens.empty().append(cleanEditor());
+	    EC.rerender();
+	},
+	deferredUpdateLens = function() {
+	    clearTimeout(timer);
+	    timer = setTimeout(updateLens,200);
+	};
+
+	$(lens)
+	    .contents().clone()
+	    .appendTo(editor.empty()),
+	editor.aloha();
+	editor.on('click','[ex\\:content]',function() {
+	    EC.Lens.editContent($(this));
+	});
+	editor.on('click','img[ex\\:src-content]',function() {
+	    EC.Lens.editContent($(this),'ex:src-content');
+	});
+	EC.Lens.tracker = EC.Lens.createChangeTracker(cleanEditor,
+						      deferredUpdateLens);
+    };
+
+    EC.Lens.editContent = function(content, attr) {
+	var 
+	deferred = $.Deferred(),
+	dialog = $('<div><div>Property to use:</div></div>'),
+	props = window.database.getAllProperties(),
+	selector = $('<select></select>'),
+	input = $('<input type="textfield">').hide(),
+	box = $('<input type="checkbox">'),
+	advanced = $('<div>Advanced expression: </div>').append(box);
+
+	attr = attr || 'ex:content';
+	box.change(function() {
+	    selector.toggle();
+	    input.toggle();
+	});
+	jQuery.each(props, function(i, p) {
+	    $('<option></option>').text(p).attr('value',p)
+		.appendTo(selector);
+	});
+	if (content.attr(attr)) {
+	    selector.val(content.attr(attr).substr(1));
+	}
+	dialog.append(selector).append(input).append(advanced);
+        dialog.dialog({"buttons": {
+                              "OK": function() {
+                                  dialog.dialog('close');
+				  content.attr(attr,
+					       box.is(':checked') ?
+					       input.val() :
+					       "." + selector.val());
+				  deferred.resolve(content);
+                              },
+                              "Cancel": function () {
+                                  dialog.dialog('close');
+				  deferred.reject();
+                              }
+                          },
+		        "modal": true, 
+			"title": "Choose Field Content",
+                        "width": "550"
+                      });
+	return deferred.promise();
+    }
+
+    EC.Lens.addNode = function(tagName, attr) {
+	var node = $(document.createElement(tagName)),
+	insertLensContent = function() {
+	    //hack because can only insert strings
+	    Aloha.execCommand('insertHTML', false, 
+			      '<'+tagName+' '
+			      + attr + '="'
+			      + node.attr(attr)
+			      + '">'
+			      + '</'+tagName+'>');
+	};
+	EC.Lens.editContent(node,attr).done(insertLensContent);
+    }
+
+    EC.Lens.addImg = function(editable) {
+	EC.Lens.addNode('img','ex:src-content');
+    }
+
+    EC.Lens.addContent = function(editable) {
+	EC.Lens.addNode('span','ex:content');
+    }
+
+    EC.Lens.stopEdit = function(lens, editContainer) {
+	var editor = Aloha.jQuery(editContainer);
+	editor.mahalo().empty();
+	if (EC.Lens.tracker) EC.Lens.tracker();
+    };
+
+    EC.open = function() {
+	var deferred = $.Deferred(),
+	input = $('<input type="file"></input>');
+
+	input.change(function(evt) {
+	    var file = evt.target.files[0],
+	    reader = new FileReader();
+	    reader.onload = function() {
+		deferred.resolve(reader.result);
+	    };
+	    reader.readAsText(file);
+	});
+	input.click();
+	return deferred.promise();
+    };
+
+    EC.saveHtml = function(html) {
+	uri = "data:application/octet-stream;charset=utf-8,"
+	    + encodeURIComponent('<html>'+html+'</html>');
+	window.open(uri,"_blank");
+    };
 
     (function () {
 
