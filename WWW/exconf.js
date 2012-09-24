@@ -7,8 +7,7 @@ ExhibitConf.exprSelector = function (win) {
     input = $('<input type="textfield">').hide(),
     box = $('<input type="checkbox">'),
     advanced = $('<div>Advanced expression: </div>').append(box),
-    container = $('<div></div>'),
-    jqVal = container.val;
+    container = $('<div></div>').append(selector).append(input).append(advanced);
 
     box.change(function() {
 	selector.toggle();
@@ -18,18 +17,18 @@ ExhibitConf.exprSelector = function (win) {
 	$('<option></option>').text(p).attr('value',p)
 	    .appendTo(selector);
     });
-    
-    return {dom: $('<div></div>').append(selector).append(input).append(advanced),
-	    val: function(set) {
-		if (typeof(set) === 'undefined') {
-		    return box.is(':checked') ?
-			input.val() :
-			"." + selector.val();
-		} else {
-		    return selector.val(set);
-		}
-	    }
-	   };
+    container.val = function(set) {
+	if (arguments.length === 0) {
+	    return box.is(':checked') ?
+		input.val() :
+		"." + selector.val();
+	} else {
+	    input.val(set.substr(1));
+	    selector.val(set);
+	}
+    }
+
+    return container;
 };
 
 
@@ -212,7 +211,7 @@ ExhibitConf.exprSelector = function (win) {
                                    .change(updater));
                 break;
 	    case 'expr':
-		inputHolder.append(exprSelector().dom);
+		inputHolder.append(exprInput().change(exprUpdater));
             }
 
             $('<td></td>').text(field).appendTo(row);
@@ -575,7 +574,7 @@ ExhibitConf.createLensEditor = function(lens, editContainer) {
 	if (content.attr(attr)) {
 	    selector.val(content.attr(attr).substr(1));
 	}
-	dialog.append(selector.dom);
+	dialog.append(selector);
 	dialog.dialog({"buttons": {
 	    "OK": function() {
 		dialog.dialog('close');
