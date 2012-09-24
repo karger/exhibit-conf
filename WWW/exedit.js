@@ -19,7 +19,7 @@ ExhibitConf.Editor = {};
     EE.addComponent = function(component, parent) {
 	config = ExhibitConf.configureElement(component);
 	parent.append(component);
-	config.done(ExhibitConf.rerender);
+	config.done(function () {ExhibitConf.rerender()});
 	config.fail(function() {
 	    component.remove();
 	});
@@ -49,12 +49,12 @@ ExhibitConf.Editor = {};
     };
 
     EE.addFacet = function() {
-	EE.addComponent($('<div ex:role="facet"></div>'),
+	EE.addComponent($('<div ex:role="facet" class="exhibit-editable"></div>'),
 			$('#facet-container'));
     };
 
     EE.addView = function() {
-	EE.addComponent($('<div ex:role="view"></div>'),
+	EE.addComponent($('<div ex:role="view" class="exhibit-editable"></div>'),
 			$('.main-panel'));
     };
     
@@ -104,8 +104,8 @@ ExhibitConf.Editor = {};
 	ExhibitConf.Lens.startEdit($('[ex\\:role="lens"]').eq(0), $('.lens-edit-container'));
     };
 
-    EE.addLensContent = function() {
-	EC.Lens.addContent('.lens-edit-container');
+    EE.addLensText = function() {
+	EC.Lens.addText('.lens-edit-container');
     }
 
     EE.addLensImg = function() {
@@ -142,7 +142,7 @@ ExhibitConf.Editor = {};
 				     "wizard-button": todo,
 				     "add-view-button": EE.addView,
 				     "add-facet-button": EE.addFacet,
-				     "add-content-button": EE.addLensContent,
+				     "add-content-button": EE.addLensText,
 				     "add-link-button": todo,
 				     "add-img-button": EE.addLensImg
 				    });

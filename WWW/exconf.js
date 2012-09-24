@@ -1,54 +1,13 @@
 //Configuration of editor
-ExhibitConf = {initialized: false,
-	       settings: {}};
-
-ExhibitConf.settings.views = {
-    "TileView": {label: "List", superclassName: "OrderedViewFrame"},
-    "ThumbnailView": {superclassName: "OrderedViewFrame"},
-    "TimelineView": {
-	specs: {
-	    "start": {type: "text"},
-	    "end": {type: "text"},
-	    "colorKey": {type: "text"},
-	    "iconKey": {type: "text"},
-	    "eventLabel": {type: "text"},
-	    "caption": {type: "text"}
-	}
-    }
-};
-
-ExhibitConf.settings.facets = {
-    "ListFacet": {label: "List",
-                  specs: {"expression": {type: "text", defaultValue: ""}}},
-    "CloudFacet": {label: "Tag Cloud",
-		   specs: {"expression": {type: "text", defaultValue: ""}}},
-    "NumericRangeFacet": {label: "Numeric Range",
-			  specs: {"expression": {type: "text", 
-						 defaultValue: ""}}},
-    "HierarchicalFacet": {label: "Hierarchical List",
-			  specs: {"expression": {type: "text", 
-						 defaultValue: ""}}},
-    "TextSearchFacet": {label: "Text Search", 
-			specs: {"expressions": {type: "text", 
-					       defaultValue: ""}}},
-    "AlphaRangeFacet": {label: "Alphabetical Range",
-			  specs: {"expression": {type: "text", 
-						 defaultValue: ""}}}
-
-};
-
-ExhibitConf.settings.viewPanel = {
-    "viewPanel": {label: "View Panel",
-                  specs: {initialView: {type: "int",
-                                        defaultValue: 0}}
-                 }
-};
+ExhibitConf = {};
 
 
 (function() {
     var EC = ExhibitConf,
     nameAttribute, configureSettingSpecs, makeSettingsTable, settingsDialog,
-    configureElement, markExhibit, reinit, findFacet, handleEditClick;
+    markExhibit, reinit, findFacet, handleEditClick, 
+    initialized = false;
+    settingSpecs = {};
 
     nameAttribute = function(elmt, name) {
 	elmt = $(elmt);
@@ -63,7 +22,52 @@ ExhibitConf.settings.viewPanel = {
     };
 
 
-//configuring the configurator
+    //configuring the configurator
+
+
+    settingSpecs.views = {
+	"TileView": {label: "List", superclassName: "OrderedViewFrame"},
+	"ThumbnailView": {superclassName: "OrderedViewFrame"},
+	"TimelineView": {
+	    specs: {
+		"start": {type: "text"},
+		"end": {type: "text"},
+		"colorKey": {type: "text"},
+		"iconKey": {type: "text"},
+		"eventLabel": {type: "text"},
+		"caption": {type: "text"}
+	    }
+	}
+    };
+
+    settingSpecs.facets = {
+	"ListFacet": {label: "List",
+                      specs: {"expression": {type: "text", defaultValue: ""}}},
+	"CloudFacet": {label: "Tag Cloud",
+		       specs: {"expression": {type: "text", defaultValue: ""}}},
+	"NumericRangeFacet": {label: "Numeric Range",
+			      specs: {"expression": {type: "text", 
+						     defaultValue: ""}}},
+	"HierarchicalFacet": {label: "Hierarchical List",
+			      specs: {"expression": {type: "text", 
+						     defaultValue: ""}}},
+	"TextSearchFacet": {label: "Text Search", 
+			    specs: {"expressions": {type: "text", 
+						    defaultValue: ""}}},
+	"AlphaRangeFacet": {label: "Alphabetical Range",
+			    specs: {"expression": {type: "text", 
+						   defaultValue: ""}}}
+
+    };
+
+    settingSpecs.viewPanel = {
+	"viewPanel": {label: "View Panel",
+                      specs: {initialView: {type: "int",
+                                            defaultValue: 0}}
+                     }
+    };
+
+
     configureSettingSpecs = function() {
 
         var className,
@@ -73,7 +77,6 @@ ExhibitConf.settings.viewPanel = {
                 return  str.split(/\?=[A-Z]/g).join(' ');
             };
 
-	    console.log(className);
             comp.className = className;
             if (!comp.label) {
                 comp.label = humanize(className);
@@ -91,17 +94,17 @@ ExhibitConf.settings.viewPanel = {
             }
         };
 
-        for (className in EC.settings.views) {
-            if (EC.settings.views.hasOwnProperty(className)) {
-                configureOne(EC.settings.views[className],
+        for (className in settingSpecs.views) {
+            if (settingSpecs.views.hasOwnProperty(className)) {
+                configureOne(settingSpecs.views[className],
                              className,
                              Exhibit.UI.viewClassNameToViewClass);
             }
         }              
 
-        for (className in EC.settings.facets) {
-            if (EC.settings.facets.hasOwnProperty(className)) {
-                configureOne(EC.settings.facets[className],
+        for (className in settingSpecs.facets) {
+            if (settingSpecs.facets.hasOwnProperty(className)) {
+                configureOne(settingSpecs.facets[className],
                              className,
                              Exhibit.UI.facetClassNameToFacetClass);
             }
@@ -209,10 +212,10 @@ ExhibitConf.settings.viewPanel = {
                 return true;
             }});
 
-        for (className in EC.settings[comp]) {
-            if (EC.settings[comp].hasOwnProperty(className)) {
+        for (className in settingSpecs[comp]) {
+            if (settingSpecs[comp].hasOwnProperty(className)) {
                 parts.tabs("add", '#' + comp + '-' + className,
-                           EC.settings[comp][className].label);
+                           settingSpecs[comp][className].label);
             }
         }
 
@@ -220,31 +223,31 @@ ExhibitConf.settings.viewPanel = {
             settings.className = $(ui.tab).data("class-name");
             $(ui.panel).empty()
                 .append(
-                    makeSettingsTable(EC.settings[comp][settings.className].specs,
-                                     settings));
+                    makeSettingsTable(settingSpecs[comp][settings.className].specs,
+                                      settings));
             return true;
         }});
-                  
+        
         parts.tabs('select','#' + comp + '-' + settings.className);
         parts.tabs('remove',0); //remove dummy tab once all else initialized
         dialog.dialog({"buttons": {
-                              "Update": function() {
-                                  dialog.dialog('close');
-                                  deferred.resolve(settings);
-                              },
-                              "Cancel": function () {
-                                  dialog.dialog('close');
-                                  deferred.reject();
-                              }
-                          },
-		        "modal": true, 
-			"title": title,
-                        "width": "550"
+            "Update": function() {
+                dialog.dialog('close');
+                deferred.resolve(settings);
+            },
+            "Cancel": function () {
+                dialog.dialog('close');
+                deferred.reject();
+            }
+        },
+		       "modal": true, 
+		       "title": title,
+                       "width": "550"
                       });
         return deferred.promise();
     };
 
-    configureElement = function(elt) {
+    EC.configureElement = function(elt) {
         var specs, comp, className, title, field, eField, promise,
         settings = {},
         role = Exhibit.getRoleAttribute(elt);
@@ -267,12 +270,12 @@ ExhibitConf.settings.viewPanel = {
             break;
         }
 	
-	if (!EC.initialized) {
+	if (!initialized) {
             configureSettingSpecs();
-	    EC.initialized=true;
+	    initialized=true;
 	}
 
-        specs = EC.settings[comp][className].specs;
+        specs = settingSpecs[comp][className].specs;
         Exhibit.SettingsUtilities.collectSettingsFromDOM(elt, specs, settings);
 
 	settings.className = className;
@@ -285,7 +288,7 @@ ExhibitConf.settings.viewPanel = {
             var field, eField;
 
 	    //reset to settings for new class
-	    specs = EC.settings[comp][settings.className].specs;
+	    specs = settingSpecs[comp][settings.className].specs;
             if (comp === 'facets') {
                 elt.attr('ex:facetClass',settings.className);
             } else if (comp === 'views') {
@@ -373,16 +376,18 @@ ExhibitConf.settings.viewPanel = {
             .not('[ex\\:role]')
             .remove();
     };
-    
-    markExhibit = function() {
-        $('[ex\\:role="view"]').addClass('exhibit-editable');
-        $('[ex\\:role="facet"]').addClass('exhibit-editable');
+
+    markExhibit = function(dom) {
+	$(dom || document);
+        $('[ex\\:role="view"]',dom).addClass('exhibit-editable');
+        $('[ex\\:role="facet"]',dom).addClass('exhibit-editable');
     };
 
-    EC.rerender = function() {
-	EC.unrender(document);
-	Exhibit.History.eraseState();
-	window.exhibit.configureFromDOM();
+    EC.rerender = function(win) {
+	win = win || window;
+	EC.unrender(win.document);
+	win.Exhibit.History.eraseState();
+	win.exhibit.configureFromDOM();
     };
 
     reinit = function(win) {
@@ -397,10 +402,9 @@ ExhibitConf.settings.viewPanel = {
 	});
     }
 
-    findFacet = function (elt,w) {
+    findFacet = function (elt,win) {
 	var i, 
-	win = w || window,
-	collection = win.exhibit.getUIContext().getCollection(),
+	collection = (win||window).exhibit.getUIContext().getCollection(),
 	facets = collection._facets;
 
 	elt = elt.get(0);
@@ -417,7 +421,7 @@ ExhibitConf.settings.viewPanel = {
         elt = button.parent();
 
         button.detach();
-        configureElement(elt).done(function () {
+        EC.configureElement(elt).done(function () {
 	    if (Exhibit.getRoleAttribute(elt) === 'facet') {
 		f = findFacet(elt);
 		f.dispose();
@@ -448,14 +452,14 @@ ExhibitConf.settings.viewPanel = {
 	timer = null,
 	
 	cleanEditor = function() {
-//          for future, use Aloha api
-//	    var edited = editor.children().eq(0),
-//	    editId = edited.attr('id'),
-//	    content = Aloha.getEditableById(editId).getContents(true);
+	    //          for future, use Aloha api
+	    //	    var edited = editor.children().eq(0),
+	    //	    editId = edited.attr('id'),
+	    //	    content = Aloha.getEditableById(editId).getContents(true);
 
-//	    var copy = editor.clone();
-//	    copy.removeAttr('contenteditable');
-//		.removeClass('aloha-editable aloha-editable-active')
+	    //	    var copy = editor.clone();
+	    //	    copy.removeAttr('contenteditable');
+	    //		.removeClass('aloha-editable aloha-editable-active')
 	    return editor.html();
 	},
 
@@ -506,22 +510,22 @@ ExhibitConf.settings.viewPanel = {
 	}
 	dialog.append(selector).append(input).append(advanced);
         dialog.dialog({"buttons": {
-                              "OK": function() {
-                                  dialog.dialog('close');
-				  content.attr(attr,
-					       box.is(':checked') ?
-					       input.val() :
-					       "." + selector.val());
-				  deferred.resolve(content);
-                              },
-                              "Cancel": function () {
-                                  dialog.dialog('close');
-				  deferred.reject();
-                              }
-                          },
-		        "modal": true, 
-			"title": "Choose Field Content",
-                        "width": "550"
+            "OK": function() {
+                dialog.dialog('close');
+		content.attr(attr,
+			     box.is(':checked') ?
+			     input.val() :
+			     "." + selector.val());
+		deferred.resolve(content);
+            },
+            "Cancel": function () {
+                dialog.dialog('close');
+		deferred.reject();
+            }
+        },
+		       "modal": true, 
+		       "title": "Choose Field Content",
+                       "width": "550"
                       });
 	return deferred.promise();
     }
@@ -544,7 +548,7 @@ ExhibitConf.settings.viewPanel = {
 	EC.Lens.addNode('img','ex:src-content');
     }
 
-    EC.Lens.addContent = function(editable) {
+    EC.Lens.addText = function(editable) {
 	EC.Lens.addNode('span','ex:content');
     }
 
@@ -593,11 +597,11 @@ ExhibitConf.settings.viewPanel = {
 	    markExhibit();
 	    $('body').addClass('exhibit-editing');
 	    editButton.click(handleEditClick); //shouldn't have to
-						  //re-add this every
-						  //time but handler is
-						  //somehow getting
-						  //dropped when I
-						  //detach the button
+	    //re-add this every
+	    //time but handler is
+	    //somehow getting
+	    //dropped when I
+	    //detach the button
             $('body').on('mouseover','.exhibit-editable',showEditButton);
         };
 
