@@ -87,29 +87,32 @@ ExhibitConf.Editor = {};
 	ExhibitConf.startEdit();
     };
     
+    EE.lensEditor = {};
     EE.editLens = function() {
+	var lens = $('[ex\\:role="lens"]');
+
+	EE.lensEditor = ExhibitConf.createLensEditor(lens, $('.lens-edit-container'));
+
 	EE.cleanup(function () {
 	    $('#lens-editor').hide();
 	    $('.lens-insert-menu').hide();
-	    ExhibitConf.Lens.stopEdit($('[ex\\:role="lens"]').eq(0), $('.lens-edit-container'));
+	    EE.lensEditor.stopEdit();
 	    ExhibitConf.rerender();
 	});
-	var lens = $('[ex\\:role="lens"]');
 	if (lens.length === 0) {
 	    lens = $('<div ex\:role="lens"></div>');
 	}
 	$('#main').hide();
 	$('.lens-insert-menu').show();
 	$('#lens-editor').show();
-	ExhibitConf.Lens.startEdit($('[ex\\:role="lens"]').eq(0), $('.lens-edit-container'));
     };
 
     EE.addLensText = function() {
-	EC.Lens.addText('.lens-edit-container');
+	EE.lensEditor.addText('.lens-edit-container');
     }
 
     EE.addLensImg = function() {
-	EC.Lens.addImg('.lens-edit-container');
+	EE.lensEditor.addImg('.lens-edit-container');
     }
 
     $(document).ready(function() {

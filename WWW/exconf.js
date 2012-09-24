@@ -1,6 +1,37 @@
 //Configuration of editor
 ExhibitConf = {};
 
+ExhibitConf.exprSelector = function (win) {
+    var props = (win || window).database.getAllProperties(),
+    selector = $('<select></select>'),
+    input = $('<input type="textfield">').hide(),
+    box = $('<input type="checkbox">'),
+    advanced = $('<div>Advanced expression: </div>').append(box),
+    container = $('<div></div>'),
+    jqVal = container.val;
+
+    box.change(function() {
+	selector.toggle();
+	input.toggle();
+    });
+    $.each(props, function(i, p) {
+	$('<option></option>').text(p).attr('value',p)
+	    .appendTo(selector);
+    });
+    
+    return {dom: $('<div></div>').append(selector).append(input).append(advanced),
+	    val: function(set) {
+		if (typeof(set) === 'undefined') {
+		    return box.is(':checked') ?
+			input.val() :
+			"." + selector.val();
+		} else {
+		    return selector.val(set);
+		}
+	    }
+	   };
+};
+
 
 (function() {
     var EC = ExhibitConf,
@@ -180,6 +211,8 @@ ExhibitConf = {};
                                              value)
                                    .change(updater));
                 break;
+	    case 'expr':
+		inputHolder.append(exprSelector().dom);
             }
 
             $('<td></td>').text(field).appendTo(row);
@@ -429,135 +462,6 @@ ExhibitConf = {};
 	    EC.rerender()});
     };
 
-
-    EC.Lens = {};
-    EC.Lens.createChangeTracker = function(signature, handler, period) {
-	//invoke the returned function to deactivate the watcher
-	var current = signature(),
-	checkChange = function() {
-	    var next=signature();
-	    if (next !== current) {
-		current = next;
-		handler();
-	    }
-	},
-	timer = setInterval(checkChange, period || 100);
-	return (function() {
-	    clearInterval(timer);
-	});
-    };
-
-    EC.Lens.startEdit = function(lens, editContainer) {
-	var editor = Aloha.jQuery(editContainer.get(0)).empty(),
-	timer = null,
-	
-	cleanEditor = function() {
-	    //          for future, use Aloha api
-	    //	    var edited = editor.children().eq(0),
-	    //	    editId = edited.attr('id'),
-	    //	    content = Aloha.getEditableById(editId).getContents(true);
-
-	    //	    var copy = editor.clone();
-	    //	    copy.removeAttr('contenteditable');
-	    //		.removeClass('aloha-editable aloha-editable-active')
-	    return editor.html();
-	},
-
-	updateLens = function() {
-	    lens.empty().append(cleanEditor());
-	    EC.rerender();
-	},
-	deferredUpdateLens = function() {
-	    clearTimeout(timer);
-	    timer = setTimeout(updateLens,200);
-	};
-
-	$(lens)
-	    .contents().clone()
-	    .appendTo(editor.empty()),
-	editor.aloha();
-	editor.on('click','[ex\\:content]',function() {
-	    EC.Lens.editContent($(this));
-	});
-	editor.on('click','img[ex\\:src-content]',function() {
-	    EC.Lens.editContent($(this),'ex:src-content');
-	});
-	EC.Lens.tracker = EC.Lens.createChangeTracker(cleanEditor,
-						      deferredUpdateLens);
-    };
-
-    EC.Lens.editContent = function(content, attr) {
-	var 
-	deferred = $.Deferred(),
-	dialog = $('<div><div>Property to use:</div></div>'),
-	props = window.database.getAllProperties(),
-	selector = $('<select></select>'),
-	input = $('<input type="textfield">').hide(),
-	box = $('<input type="checkbox">'),
-	advanced = $('<div>Advanced expression: </div>').append(box);
-
-	attr = attr || 'ex:content';
-	box.change(function() {
-	    selector.toggle();
-	    input.toggle();
-	});
-	jQuery.each(props, function(i, p) {
-	    $('<option></option>').text(p).attr('value',p)
-		.appendTo(selector);
-	});
-	if (content.attr(attr)) {
-	    selector.val(content.attr(attr).substr(1));
-	}
-	dialog.append(selector).append(input).append(advanced);
-        dialog.dialog({"buttons": {
-            "OK": function() {
-                dialog.dialog('close');
-		content.attr(attr,
-			     box.is(':checked') ?
-			     input.val() :
-			     "." + selector.val());
-		deferred.resolve(content);
-            },
-            "Cancel": function () {
-                dialog.dialog('close');
-		deferred.reject();
-            }
-        },
-		       "modal": true, 
-		       "title": "Choose Field Content",
-                       "width": "550"
-                      });
-	return deferred.promise();
-    }
-
-    EC.Lens.addNode = function(tagName, attr) {
-	var node = $(document.createElement(tagName)),
-	insertLensContent = function() {
-	    //hack because can only insert strings
-	    Aloha.execCommand('insertHTML', false, 
-			      '<'+tagName+' '
-			      + attr + '="'
-			      + node.attr(attr)
-			      + '">'
-			      + '</'+tagName+'>');
-	};
-	EC.Lens.editContent(node,attr).done(insertLensContent);
-    }
-
-    EC.Lens.addImg = function(editable) {
-	EC.Lens.addNode('img','ex:src-content');
-    }
-
-    EC.Lens.addText = function(editable) {
-	EC.Lens.addNode('span','ex:content');
-    }
-
-    EC.Lens.stopEdit = function(lens, editContainer) {
-	var editor = Aloha.jQuery(editContainer);
-	editor.mahalo().empty();
-	if (EC.Lens.tracker) EC.Lens.tracker();
-    };
-
     EC.open = function() {
 	var deferred = $.Deferred(),
 	input = $('<input type="file"></input>');
@@ -588,8 +492,8 @@ ExhibitConf = {};
 	    //quick hack: set parent css so edit button absolute positioning
 	    //is relative to parent
 	    editButton.detach();
-            $(this).css('position','relative').prepend(editButton);
-            return false; //stop propagation
+	    $(this).css('position','relative').prepend(editButton);
+	    return false; //stop propagation
         };
 
 
@@ -602,15 +506,136 @@ ExhibitConf = {};
 	    //somehow getting
 	    //dropped when I
 	    //detach the button
-            $('body').on('mouseover','.exhibit-editable',showEditButton);
+	    $('body').on('mouseover','.exhibit-editable',showEditButton);
         };
 
         EC.stopEdit = function () {
-            $('body').off('mouseover','.exhibit-editable',showEditButton);
+	    $('body').off('mouseover','.exhibit-editable',showEditButton);
 	    $('body').removeClass('exhibit-editing');
 	    editButton.off('click',handleEditClick); //remove since re-add
-            EC.unrender(document);
-            window.exhibit.configureFromDOM();
+	    EC.unrender(document);
+	    window.exhibit.configureFromDOM();
         };
     })();
 })();
+
+
+ExhibitConf.createLensEditor = function(lens, editContainer) {
+    var editor = {},
+    
+    alohaEditor = Aloha.jQuery(editContainer.get(0)).empty(),
+    cleanAlohaEditor = function() {
+	//          for future, use Aloha api
+	//	    var edited = editor.children().eq(0),
+	//	    editId = edited.attr('id'),
+	//	    content = Aloha.getEditableById(editId).getContents(true);
+
+	//	    var copy = editor.clone();
+	//	    copy.removeAttr('contenteditable');
+	//		.removeClass('aloha-editable aloha-editable-active')
+	return alohaEditor.html();
+    },
+
+    updateLens = function() {
+	lens.empty().append(cleanAlohaEditor());
+	ExhibitConf.rerender();
+    },
+
+    deferredUpdateLens = function() {
+	clearTimeout(timer);
+	timer = setTimeout(updateLens,200);
+    },
+
+    timer = null,
+    tracker = null,
+    createChangeTracker = function(signature, handler, period) {
+	//invoke the returned function to deactivate the watcher
+	var current = signature(),
+	checkChange = function() {
+	    var next=signature();
+	    if (next !== current) {
+		current = next;
+		handler();
+	    }
+	},
+	timer = setInterval(checkChange, period || 100);
+	return (function() {
+	    clearInterval(timer);
+	});
+    },
+    tracker = createChangeTracker(cleanAlohaEditor, deferredUpdateLens),
+
+    editContent = function(content, attr) {
+	var 
+	deferred = $.Deferred(),
+	dialog = $('<div><div>Property to use:</div></div>'),
+	attr = attr || 'ex:content',
+	selector = ExhibitConf.exprSelector();
+
+	if (content.attr(attr)) {
+	    selector.val(content.attr(attr).substr(1));
+	}
+	dialog.append(selector.dom);
+	dialog.dialog({"buttons": {
+	    "OK": function() {
+		dialog.dialog('close');
+		content.attr(attr,selector.val());
+		deferred.resolve(content);
+	    },
+	    "Cancel": function () {
+		dialog.dialog('close');
+		deferred.reject();
+	    }
+	},
+		       "modal": true, 
+		       "title": "Choose Field Content",
+		       "width": "550"
+		      });
+	return deferred.promise();
+    };
+
+    editor.addNode = function(tagName, attr) {
+	var node = $(document.createElement(tagName)),
+	//remember/restore range since interaction w/dialog clear it
+	range = Aloha.getSelection().getRangeAt(0), 
+	insertLensContent = function() {
+	    //hack because can only insert strings
+	    Aloha.getSelection().removeAllRanges();
+	    Aloha.getSelection().addRange(range);
+	    Aloha.execCommand('insertHTML', false, 
+			      '<'+tagName+' '
+			      + attr + '="'
+			      + node.attr(attr)
+			      + '">'
+			      + '</'+tagName+'>');
+	};
+	editContent(node,attr).done(insertLensContent);
+    };
+
+    editor.addImg = function(editable) {
+	editor.addNode('img','ex:src-content');
+    };
+
+    editor.addText = function(editable) {
+	editor.addNode('span','ex:content');
+    };
+
+    editor.stopEdit = function() {
+	var editor = Aloha.jQuery(editContainer);
+	alohaEditor.mahalo().empty();
+	tracker(); //destroys tracker
+    };
+
+    $(lens)
+	.contents().clone()
+	.appendTo(alohaEditor.empty()),
+    alohaEditor.aloha();
+    alohaEditor.on('click','[ex\\:content]',function() {
+	editContent($(this));
+    });
+    alohaEditor.on('click','img[ex\\:src-content]',function() {
+	editContent($(this),'ex:src-content');
+    });
+
+    return editor;
+}
