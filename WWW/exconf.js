@@ -1,8 +1,8 @@
 //Configuration of editor
 ExhibitConf = {};
 
-ExhibitConf.exprSelector = function (win) {
-    var props = (win || window).database.getAllProperties(),
+ExhibitConf.exprSelector = function (props) {
+    props = props || window.database.getAllProperties(),
     selector = $('<select></select>'),
     input = $('<input type="textfield">').hide(),
     box = $('<input type="checkbox">'),
@@ -14,16 +14,21 @@ ExhibitConf.exprSelector = function (win) {
 	input.toggle();
     });
     $.each(props, function(i, p) {
-	$('<option></option>').text(p).attr('value',p)
+	$('<option></option>').text(p).attr('value','.'+p)
 	    .appendTo(selector);
     });
     container.val = function(set) {
 	if (arguments.length === 0) {
 	    return box.is(':checked') ?
 		input.val() :
-		"." + selector.val();
+		selector.val();
 	} else {
-	    input.val(set.substr(1));
+	    input.val(set);
+	    if (props.indexOf(set) == -1) {
+		$('<option></option>').text(set.substr(1))
+		    .attr('value',set)
+		    .appendTo(selector);
+	    }
 	    selector.val(set);
 	}
     }
@@ -521,6 +526,8 @@ ExhibitConf.exprSelector = function (win) {
 
 ExhibitConf.createLensEditor = function(lens, editContainer) {
     var editor = {},
+    win = editContainer.get(0).ownerDocument.defaultView,
+    props = win.database.getAllProperties(),
     
     alohaEditor = Aloha.jQuery(editContainer.get(0)).empty(),
     cleanAlohaEditor = function() {
@@ -569,10 +576,10 @@ ExhibitConf.createLensEditor = function(lens, editContainer) {
 	deferred = $.Deferred(),
 	dialog = $('<div><div>Property to use:</div></div>'),
 	attr = attr || 'ex:content',
-	selector = ExhibitConf.exprSelector();
+	selector = ExhibitConf.exprSelector(props);
 
 	if (content.attr(attr)) {
-	    selector.val(content.attr(attr).substr(1));
+	    selector.val(content.attr(attr));
 	}
 	dialog.append(selector);
 	dialog.dialog({"buttons": {
