@@ -79,8 +79,8 @@ ExhibitConf.Editor = {};
     EE.lensEditor = {};
     EE.editLens = function() {
 	var lens = $('[ex\\:role="lens"]',EC.win.document),
-	editContainer = $('#lens-editor-template').clone()
-	    .removeAttr('id').prependTo(EC.win.document.body).show(),
+	editContainer = EE.lensEditorTemplate.clone()
+	    .prependTo(EC.win.document.body).show(),
 	lensContainer = $('.lens-editor-lens-container',editContainer);
 
 	EE.lensEditor = ExhibitConf.createLensEditor(lens, lensContainer);
@@ -107,9 +107,11 @@ ExhibitConf.Editor = {};
     };
 
     EE.newExhibit = function() {
-	EC.loadInWindow("<html><head><title>New	Exhibit<title></head>"+
-			"<body><h1>New Exhibit</h1></body></html>");
+	$(EC.win.document.body).empty().append(EE.exhibitTemplate.clone());
+	EE.activate();
+	ExhibitConf.rerender();
     }
+
 
     EE.createEditorIframe = function(loc) {
 	var deferred = $.Deferred(),
@@ -143,25 +145,40 @@ ExhibitConf.Editor = {};
     };
 
     EE.init = function() {
-	$('.lens-insert-menu').hide();
-	$('.page-insert-menu').hide();
-	configMenuBar($('.topnav'), {"new-button":  EE.newExhibit,
-				     "open-button": EE.open,
-				     "save-button": EE.saveAs,
-				     "preview-button": EE.preview,
-				     "edit-exhibit-button": EE.editPage,
-				     "edit-lens-button": EE.editLens,
-				     "edit-data-button": ExhibitConf.configureData,
-				     "help-button": todo,
-				     "wizard-button": todo,
-				     "add-view-button": EE.addView,
-				     "add-facet-button": EE.addFacet,
-				     "add-content-button": EE.addLensText,
-				     "add-link-button": todo,
-				     "add-img-button": EE.addLensImg
-				    });
+	EE.menu = $('#exedit-menu').detach()
+	    .removeAttr('id');
+	EE.lensTemplate = $('#lens-template').detach()
+	    .removeAttr('id').show().children();
+	EE.lensEditorTemplate = $('#lens-editor-template').detach()
+	    .removeAttr('id').show();
+	EE.exhibitTemplate = $('#exhibit-template').detach()
+	    .removeAttr('id').show().children();
+	EC.unrender(EE.exhibitTemplate); //in case exhibit got there first
     };
     
+    EE.activate = function() {
+	var menu = EE.menu.clone(),
+	spacer=$('<div class="exedit"></div>');
+	$('.lens-insert-menu',menu).hide();
+	$('.page-insert-menu',menu).hide();
+	configMenuBar(menu, {"new-button":  EE.newExhibit,
+			     "open-button": EE.open,
+			     "save-button": EE.saveAs,
+			     "preview-button": EE.preview,
+			     "edit-exhibit-button": EE.editPage,
+			     "edit-lens-button": EE.editLens,
+			     "edit-data-button": ExhibitConf.configureData,
+			     "help-button": todo,
+			     "wizard-button": todo,
+			     "add-view-button": EE.addView,
+			     "add-facet-button": EE.addFacet,
+			     "add-content-button": EE.addLensText,
+			     "add-link-button": todo,
+			     "add-img-button": EE.addLensImg
+			    });
+	menu.prependTo(EC.win.document.body);
+	spacer.height(menu.height()).prependTo(EC.win.document.body);
+    };
 
     $(document).ready(function() {
 	var maybeSetData = function() {
@@ -179,11 +196,9 @@ ExhibitConf.Editor = {};
 	    }
 	};
 
+	EC.win = window;
 	EE.init();
-	EE.createEditorIframe('#page-editor').done(function(frame) {
-	    maybeSetData();
-	    EE.setupIframe(frame);
-	    EC.win = frame.get(0).contentWindow;
-	});
+	EE.activate();
+	maybeSetData();
     });
 })();
