@@ -156,6 +156,10 @@ ExhibitConf.Editor = {};
 	EC.unrender(EE.exhibitTemplate); //in case exhibit got there first
     };
     
+    EE.visitSimile = function() {
+	window.open('http://www.simile-widgets.org/exhibit');
+    }
+
     EE.activate = function() {
 	var menu = EE.menu.clone(),
 	spacer=$('<div class="exedit"></div>');
@@ -170,6 +174,7 @@ ExhibitConf.Editor = {};
 			     "edit-data-button": ExhibitConf.configureData,
 			     "help-button": todo,
 			     "wizard-button": todo,
+			     "wizard-button": EE.visitSimile,
 			     "add-view-button": EE.addView,
 			     "add-facet-button": EE.addFacet,
 			     "add-content-button": EE.addLensText,
