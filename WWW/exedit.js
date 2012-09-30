@@ -25,17 +25,6 @@ ExhibitConf.Editor = {};
 	});
     };
     
-    test = function() {
-	$('#editor-iframe-container')
-	    .append('<iframe seamless src="http://people.csail.mit.edu/karger"></iframe>');
-    };
-
-    test2 = function() {
-	var h = $('#editor-iframe-container').children().contents().height();
-	$('#editor-iframe-container').contents().height(h);
-	$('#editor-iframe-container').contents().width('100%');
-    }
-
     EE.open = function() {
 	EC.open().done(function(text) {alert(text);});
     };
@@ -89,13 +78,16 @@ ExhibitConf.Editor = {};
     
     EE.lensEditor = {};
     EE.editLens = function() {
-	var lens = $('[ex\\:role="lens"]');
+	var lens = $('[ex\\:role="lens"]',EC.win.document),
+	editContainer = $('#lens-editor-template').clone()
+	    .removeAttr('id').prependTo(EC.win.document.body).show(),
+	lensContainer = $('.lens-editor-lens-container',editContainer);
 
-	EE.lensEditor = ExhibitConf.createLensEditor(lens, $('.lens-edit-container'));
+	EE.lensEditor = ExhibitConf.createLensEditor(lens, lensContainer);
 
 	EE.cleanup(function () {
-	    $('#lens-editor').hide();
 	    $('.lens-insert-menu').hide();
+	    editContainer.remove();
 	    EE.lensEditor.stopEdit();
 	    ExhibitConf.rerender();
 	});
@@ -104,37 +96,56 @@ ExhibitConf.Editor = {};
 	}
 	$('#main').hide();
 	$('.lens-insert-menu').show();
-	$('#lens-editor').show();
     };
 
     EE.addLensText = function() {
-	EE.lensEditor.addText('.lens-edit-container');
-    }
+	EE.lensEditor.addText();
+    };
 
     EE.addLensImg = function() {
-	EE.lensEditor.addImg('.lens-edit-container');
+	EE.lensEditor.addImg();
+    };
+
+    EE.newExhibit = function() {
+	EC.loadInWindow("<html><head><title>New	Exhibit<title></head>"+
+			"<body><h1>New Exhibit</h1></body></html>");
     }
 
-    $(document).ready(function() {
-	var maybeSetData = function() {
-	    var i, url, arg,
-	    link = $('[rel="exhibit/data"]'),
-	    args = window.location.search.substr(1).split('&');
+    EE.createEditorIframe = function(loc) {
+	var deferred = $.Deferred(),
+	frame = $('<iframe id="page-editor-iframe" src="blank.html"></iframe>')
+	    .appendTo(loc), 
+	frameBare = frame.get(0);
 
-	    for (i=0; i<args.length; i++) {
-		arg = args[i];
-		if (arg.substr(0,4) === "data") {
-		    link.attr('href',arg.substr(5));
-		} else if (arg.substr(0,4) === "type") {
-		    link.attr('type',arg.substr(5));
-		} 
-	    }
+	setInterval(function () {
+	    //don't cache .contentWindow.document; may change during load
+	    frame.height($(frameBare.contentWindow.document.body).height()+100);
+	}, 100);
+	frame.load(function() {
+	    deferred.resolve(frame);
+	});
+	return deferred.promise();
+    }
+
+    EE.setupIframe = function(frame) {
+	var styles = [
+	    "http://cdn.jsdelivr.net/alohaeditor/aloha-0.21.0/css/aloha.css",
+	    "exconf.css",
+	],
+	win = frame.get(0).contentWindow,
+	head = $(win.document.head);
+
+	for (i=0; i < styles.length; i++) {
+	    style = $('<link rel="stylesheet" class="exhibitconf-added">')
+		.attr('href', styles[i]);
+	    head.append(style);
 	}
-	    
-	maybeSetData();
+    };
+
+    EE.init = function() {
 	$('.lens-insert-menu').hide();
 	$('.page-insert-menu').hide();
-	configMenuBar($('.topnav'), {"new-button":  todo,
+	configMenuBar($('.topnav'), {"new-button":  EE.newExhibit,
 				     "open-button": EE.open,
 				     "save-button": EE.saveAs,
 				     "preview-button": EE.preview,
@@ -149,6 +160,30 @@ ExhibitConf.Editor = {};
 				     "add-link-button": todo,
 				     "add-img-button": EE.addLensImg
 				    });
+    };
+    
 
+    $(document).ready(function() {
+	var maybeSetData = function() {
+	    var i, url, arg,
+	    link = $('[rel="exhibit/data"]',ExhibitConf.win),
+	    args = window.location.search.substr(1).split('&');
+
+	    for (i=0; i<args.length; i++) {
+		arg = args[i];
+		if (arg.substr(0,4) === "data") {
+		    link.attr('href',arg.substr(5));
+		} else if (arg.substr(0,4) === "type") {
+		    link.attr('type',arg.substr(5));
+		} 
+	    }
+	};
+
+	EE.init();
+	EE.createEditorIframe('#page-editor').done(function(frame) {
+	    maybeSetData();
+	    EE.setupIframe(frame);
+	    EC.win = frame.get(0).contentWindow;
+	});
     });
 })();
