@@ -15,6 +15,7 @@ ExhibitConf.getAlohaEditable = function(node) {
     }     
     return null;
 };
+
 ExhibitConf.mahalo = function(node) {
     jQuery.fn.mahalo = function () {
 	return this.each(function () {
@@ -64,7 +65,7 @@ ExhibitConf.exprSelector = function (props) {
 (function() {
     var EC = ExhibitConf,
     nameAttribute, configureSettingSpecs, makeSettingsTable, settingsDialog,
-    markExhibit, reinit, findFacet, handleEditClick, 
+    markExhibit, findFacet, handleEditClick, 
     initialized = false;
     settingSpecs = {};
 
@@ -379,6 +380,18 @@ ExhibitConf.exprSelector = function (props) {
 	return promise;
     };
 
+    EC.reinit = function(win) {
+	win = win || EC.win;
+	EC.unrender(win.document);
+	win.database.removeAllStatements();
+        win.database.loadLinks(function() {
+		if (win.Exhibit.History)
+		    win.Exhibit.History.eraseState();
+		//need to set proper 'this" on configure call
+		//so can't just pass configureFromDOM
+		win.exhibit.configureFromDOM();
+	});
+    };
 
     EC.configureData = function() {
 	var link = $('[rel="exhibit/data"]'),
@@ -405,7 +418,7 @@ ExhibitConf.exprSelector = function (props) {
 		    link.attr('type',typeField.val());
 		};
 		EC.win.Exhibit.Lens._commonProperties = null; //clear cache
-		reinit();
+		EC.reinit();
 	    }
 	    
 	};
@@ -456,21 +469,10 @@ ExhibitConf.exprSelector = function (props) {
     EC.rerender = function(win) {
 	win = win || EC.win;
 	EC.unrender(win.document);
-	win.Exhibit.History.eraseState();
+	if (win.Exhibit.History)
+	    win.Exhibit.History.eraseState();
 	win.exhibit.configureFromDOM();
     };
-
-    reinit = function(win) {
-	win = win || EC.win;
-	EC.unrender(win.document);
-	win.Exhibit.History.eraseState();
-	win.database.removeAllStatements();
-        win.database.loadLinks(function() {
-	    //need to set proper 'this" on configure call
-	    //so can't just pass configureFromDOM
-	    win.exhibit.configureFromDOM();
-	});
-    }
 
     findFacet = function (elt,win) {
 	var i, 
@@ -533,7 +535,7 @@ ExhibitConf.exprSelector = function (props) {
 	scripts = head.match(scriptRe),
 	scriptlessHead = head.split(scriptRe).join(' '),
 	insertScript = function(s) {
-	    var src = s.match(/src\s*=\s*['"]([^"']*?)["']/i)[1];
+	    var src = s.match(/src\s*=\s*['"]([^"']*?)["']/i)[1]; //'"
 	    scr = document.createElement("script");
 	    scr.type="text/javascript";
 	    scr.src=src;

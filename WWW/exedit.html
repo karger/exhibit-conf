@@ -4,20 +4,20 @@
     <meta charset="utf-8">
 
     <!-- jQuery -->
-    <script class="exedit"  src="http://code.jquery.com/jquery-1.8.1.js"></script>
+    <script class="exedit" src="http://code.jquery.com/jquery-1.8.2.js"></script>
     <script  class="exedit" src="http://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
-    <link  class="exedit" rel="stylesheet" href="http://code.jquery.com/ui/1.8.23/themes/smoothness/jquery-ui.css" type="text/css"/>
+    <link  class="exedit" class="exedit" rel="stylesheet" href="http://code.jquery.com/ui/1.8.23/themes/smoothness/jquery-ui.css" type="text/css"/>
 
     <!-- Aloha -->
-    <script src="/karger/Aloha/lib/require.js"></script>
-    <script >
+    <script  class="exedit" src="/karger/Aloha/lib/require.js"></script>
+    <script  class="exedit" >
       //aloha needs jquery 1.9; enable merge once 1.9 is available
       //define('jquery', function() {return window.jQuery;});
       //define('jqueryui', function() {return window.jQuery.ui;});
     </script>
-    <script  src="/karger/Aloha/lib/aloha-bare.js"
+    <script  class="exedit" src="/karger/Aloha/lib/aloha-bare.js"
 	    data-aloha-plugins="common/align,common/commands,common/format,common/image,common/link,common/paste,common/table,common/undo"></script>
-    <link  rel="stylesheet" href="/karger/Aloha/css/aloha.css"/>
+    <link  class="exedit" class="exedit" rel="stylesheet" href="/karger/Aloha/css/aloha.css"/>
 
     <!-- Exhibit -->
     <script src="http://people.csail.mit.edu/karger/Exhibit3/api/exhibit-api.js?bundle=false"></script>
@@ -26,9 +26,9 @@
     <!-- Exhibit editor -->
     <link  class="exedit" rel="stylesheet" href="menubar.css">
     <link   class="exedit" rel="stylesheet" href="dropdown.css">
-    <script  class="exedit"  src="exconf.js"></script>
-    <script  class="exedit" src="exedit.js"></script>
-    <link   class="exedit" rel="stylesheet" href="exedit.css">
+    <script  src="exconf.js"></script>
+    <script  src="exedit.js"></script>
+    <script  src="htmlparser.js"></script>
     <link   class="exedit" rel="stylesheet" href="exconf.css">
     <title>Exhibit Editor</title>
 
@@ -73,7 +73,7 @@
 	<ul class="subnav">
 	  <li><a href="#" class="help-button">Help</a></li>
 	  <li><a href="#" class="wizard-button">Wizard</a></li>
-	  <li><a href="#" class="resource-button">Resources</a></li>
+	  <li><a href="#" class="simile-button">Exhibit Web Site</a></li>
 	</ul>
       </li>
       <li class='title'><a href='#'>Exhibit Editor</a></li>
@@ -93,27 +93,6 @@
       <div class="lens-editor-lens-preview" ex:role="view"></div>
     </div>
 
-    <div id="exhibit-template" style="display:none">
-      <h1>New Exhibit</h1>
-      This is an empty exhibit.  You can use this as a starting point to create your own. 
-      <div ex:role="lens">
-	<span ex:content=".label"></span>
-      </div>
-      <table>
-	<tr>
-	  <td width="80%">
-	    <div ex:role="viewPanel" class="main-panel">
-	      <div ex:role="view" ex:viewClass="TileView"></div>
-	    </div>
-	  </td>
-	  <td width="20%" style="vertical-align: top">
-	    <div id="facet-container" style="width: 200px" >
-	      <div ex:role="facet" ex:expression=".nobel-year"></div>
-	    </div>
-	  </td>
-	</tr>
-      </table>
-    </div>
 
     <!-- present only to trick exhibit into permitting ex: syntax -->
     <div ex:role="coder"></div>
