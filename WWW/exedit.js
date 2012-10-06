@@ -26,14 +26,20 @@ ExhibitConf.Editor = {};
 	};
     
 	EE.open = function() {
-	    EC.open().done(function(text) {alert(text);});
+	    EE.preview();
+	    EC.open().done(EE.beginEdit);
 	};
 
 	EE.saveAs = function() {
-	    var dom = $(document.documentElement).clone();
+	    //clone(true) to copy data as well.
+	    var dom = $(document.documentElement).clone(true);
 	    EC.unrender(dom);
 	    $('link[rel="exedit/script"]',dom).each(function() {
-		    $(this).replaceWith($(this).data('exedit-script'));
+		    var a = dom;
+		    //can't use jquery; it evaluates the scripts
+		    this.parentNode
+			.replaceChild($(this).data('exedit-script'),
+				      this);
 		});
 	    dom.find('.exedit').remove();
 	    EC.saveHtml(dom.html());
@@ -108,26 +114,29 @@ ExhibitConf.Editor = {};
 	    EE.lensEditor.addImg();
 	};
 
-	EE.newExhibit = function() {
-	    jQuery.get("blank.html", function(data) {
-		    var parser = new DOMParser(),
-		    doc = parser.parseFromString(data, "text/html");
+	EE.beginEdit = function(data) {
+	    var parser = new DOMParser(),
+	    doc = parser.parseFromString(data, "text/html");
 
-		    //block script execution in new doc
-		    //without disturbing position
-		    $('script',doc).each(function () {
-			    $('<link rel="exedit/script">')
-				.data("exedit-script",this)
-				.replaceAll(this);
-			});
-
-		    $('body',document).empty().append($('body',doc).remove().children());
-		    document.title = "Exedit: " + $('title',doc).text();
-		    $('head',document).empty().append($('head',doc).remove().children());
-
-		    EE.activate();
-		    ExhibitConf.reinit();
+	    //block script execution in new doc
+	    //without disturbing position
+	    $('script',doc).each(function () {
+		    $('<link rel="exedit/script">')
+			.data("exedit-script",this)
+			.replaceAll(this);
 		});
+
+	    $('body',document).empty().append($('body',doc).detach().children());
+	    document.title = "Exedit: " + $('title',doc).text();
+	    $('head',document).empty().append($('head',doc).detach().children());
+
+	    EE.activate();
+	    ExhibitConf.reinit();
+	}
+
+	EE.newExhibit = function() {
+	    EE.preview();
+	    $.get("blank.html", EE.beginEdit);
 	}
 
 
