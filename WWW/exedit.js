@@ -95,8 +95,8 @@ ExhibitConf.Editor = {};
 
 	    EE.cleanup(function () {
 		    $('.lens-insert-menu').hide();
-		    editContainer.remove();
 		    EE.lensEditor.stopEdit();
+		    editContainer.remove();
 		    ExhibitConf.rerender();
 		});
 	    if (lens.length === 0) {
@@ -115,18 +115,25 @@ ExhibitConf.Editor = {};
 	};
 
 	EE.beginEdit = function(data) {
-	    var parser = new DOMParser(),
+	    var 
+	    alohaStuff = $('.aloha,.aloha-ui,.aloha-ui-context,.pasteContainer');
+	    parser = new DOMParser(),
+	    script = /script/i,
 	    doc = parser.parseFromString(data, "text/html");
 
 	    //block script execution in new doc
 	    //without disturbing position
 	    $('script',doc).each(function () {
-		    $('<link rel="exedit/script">')
-			.data("exedit-script",this)
-			.replaceAll(this);
+		    if (script.test(this.type) || !this.type) {
+			$('<link rel="exedit/script">')
+			    .data("exedit-script",this)
+			    .replaceAll(this);
+		    }
 		});
 
-	    $('body',document).empty().append($('body',doc).detach().children());
+	    $('body',document).empty()
+	        .append($('body',doc).detach().children())
+	        .append(alohaStuff);
 	    document.title = "Exedit: " + $('title',doc).text();
 	    $('head',document).empty().append($('head',doc).detach().children());
 
@@ -214,6 +221,7 @@ ExhibitConf.Editor = {};
 	    EE.headStuff.appendTo(EC.win.document.head);
 	    menu.prependTo(EC.win.document.body);
 	    spacer.height(menu.height()).prependTo(EC.win.document.body);
+
 	};
 
 	$(document).ready(function() {

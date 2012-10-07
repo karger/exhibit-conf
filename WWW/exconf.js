@@ -1,5 +1,5 @@
 //Configuration of editor
-ExhibitConf = {};
+ExhibitConf = {idCounter: 0};
 
 //aloha's mahalo doesn't work inside an iframe
 ExhibitConf.getAlohaEditable = function(node) {
@@ -384,11 +384,11 @@ ExhibitConf.exprSelector = function (props) {
 	win = win || EC.win;
 	EC.unrender(win.document);
 	win.database.removeAllStatements();
+	if (win.Exhibit.History)
+	    win.Exhibit.History.eraseState();
         win.database.loadLinks(function() {
-		if (win.Exhibit.History)
-		    win.Exhibit.History.eraseState();
 		//need to set proper 'this" on configure call
-		//so can't just pass configureFromDOM
+		//so can't just pass configureFromDOM to loadLinks
 		win.exhibit.configureFromDOM();
 	});
     };
@@ -458,12 +458,23 @@ ExhibitConf.exprSelector = function (props) {
             .children()
             .not('[ex\\:role]')
             .remove();
+	dom.find('.exconf-no-id').removeAttr('id');
     };
 
     markExhibit = function(dom) {
 	dom = $(dom || EC.win.document.body);
         $('[ex\\:role="view"]',dom).addClass('exhibit-editable');
         $('[ex\\:role="facet"]',dom).addClass('exhibit-editable');
+	//weird things happen if ids get added after rendering
+	//unfortunately, aloha sometimes does that.
+	//preclude by arranging to remove them
+	$('[ex\\:role]',dom).filter(':not([id])').addClass('exconf-no-id');
+    };
+
+    unMarkExhibit = function(dom) {
+	dom = $(dom || EC.win.document.body);
+        $('[ex\\:role="view"]',dom).removeClass('exhibit-editable');
+        $('[ex\\:role="facet"]',dom).removeClass('exhibit-editable');
     };
 
     EC.rerender = function(win) {
@@ -471,6 +482,9 @@ ExhibitConf.exprSelector = function (props) {
 	EC.unrender(win.document);
 	if (win.Exhibit.History)
 	    win.Exhibit.History.eraseState();
+	win.exhibit._uiContext = 
+	    Exhibit.UIContext.createRootContext({},win.exhibit); //sledgehammer to clear old state
+	win.exhibit._collectionMap = {};
 	win.exhibit.configureFromDOM();
     };
 
@@ -485,7 +499,9 @@ ExhibitConf.exprSelector = function (props) {
 		return facets[i];
 	    }
 	}
-	alert("can't find facet!");
+	if (console && console.log) {
+	    console.log("can't find facet!");
+	}
     };
 
     handleEditClick = function(event) {
@@ -570,11 +586,16 @@ ExhibitConf.exprSelector = function (props) {
 
         EC.startEdit = function() {
 	    markExhibit();
+//	    $(EC.win.document.body)
+//	        .wrapInner('<div class="exhibit-wrapper"></div');
 	    $(EC.win.document.body).addClass('exhibit-editing');
+	    $('.exhibit-editable').alohaBlock();
+	    $('#main').aloha()
 	    editButton.click(handleEditClick); //shouldn't have to
 	    //re-add this every time button is moved but handler is
 	    //somehow getting dropped when I detach the button
-	    $(EC.win.document.body).on('mouseover','.exhibit-editable',showEditButton);
+	    $(EC.win.document.body).on('mouseover','.exhibit-editable',
+				       showEditButton);
         };
 
         EC.stopEdit = function () {
@@ -582,6 +603,10 @@ ExhibitConf.exprSelector = function (props) {
 		.removeClass('exhibit-editing')
 		.off('mouseover','.exhibit-editable',showEditButton);
 	    editButton.off('click',handleEditClick); //remove since re-add
+	    $('#main').mahalo()
+	    $('.exhibit-editable').mahaloBlock();
+	    $('.exhibit-wrapper').children().unwrap();
+	    unMarkExhibit();
 	    EC.unrender(EC.win.document);
 	    EC.win.exhibit.configureFromDOM();
         };
@@ -690,8 +715,8 @@ ExhibitConf.createLensEditor = function(lens, lensContainer) {
 
     editor.stopEdit = function() {
 	tracker.dispose(); //destroys tracker
-	var editor = Aloha.jQuery(lensContainer);
-	ExhibitConf.mahalo(alohaEditor);
+	alohaEditor.mahalo();
+	//	ExhibitConf.mahalo(alohaEditor);
 	alohaEditor.empty();
 	lensContainer.removeClass('lens-edit-lens-container');
     };
