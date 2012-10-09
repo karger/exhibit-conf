@@ -1,5 +1,7 @@
 /*
  * HTML Parser By John Resig (ejohn.org)
+ * Code at http://ejohn.org/blog/pure-javascript-html-parser/
+ *
  * Original code by Erik Arvidsson, Mozilla Public License
  * http://erik.eae.net/simplehtmlparser/simplehtmlparser.js
  *
@@ -23,12 +25,17 @@
  *
  */
 
+/*
+One small bugfix to address stack error
+Plus change to more permissive regexp
+*/
+
 (function(){
 
 	// Regular Expressions for parsing tags and attributes
-	var startTag = /^<([-A-Za-z0-9_]+)((?:\s+\w+(?:\s*=\s*(?:(?:"[^"]*")|(?:'[^']*')|[^>\s]+))?)*)\s*(\/?)>/,
+	var startTag = /^<([-A-Za-z0-9_]+)((?:\s+(?:\w|[.:])+(?:\s*=\s*(?:(?:"[^"]*")|(?:'[^']*')|[^>\s]+))?)*)\s*(\/?)>/,
 		endTag = /^<\/([-A-Za-z0-9_]+)[^>]*>/,
-		attr = /([-A-Za-z0-9_]+)(?:\s*=\s*(?:(?:"((?:\\.|[^"])*)")|(?:'((?:\\.|[^'])*)')|([^>\s]+)))?/g;
+		attr = /([-A-Za-z0-9_.:]+)(?:\s*=\s*(?:(?:"((?:\\.|[^"])*)")|(?:'((?:\\.|[^'])*)')|([^>\s]+)))?/g;
 		
 	// Empty Elements - HTML 4.01
 	var empty = makeMap("area,base,basefont,br,col,frame,hr,img,input,isindex,link,meta,param,embed");
@@ -224,13 +231,15 @@
 		};
 	
 		if ( !doc ) {
-			if ( typeof DOMDocument != "undefined" )
-				doc = new DOMDocument();
-			else if ( typeof document != "undefined" && document.implementation && document.implementation.createDocument )
-				doc = document.implementation.createDocument("", "", null);
-			else if ( typeof ActiveX != "undefined" )
-				doc = new ActiveXObject("Msxml.DOMDocument");
-			
+		    if ( typeof DOMDocument != "undefined" ) {
+			doc = new DOMDocument();
+		    } else if ( typeof document != "undefined" &&
+				document.implementation &&
+				document.implementation.createDocument ) {
+			doc = document.implementation.createDocument("", "", null);
+		    } else if ( typeof ActiveX != "undefined" ) {
+			doc = new ActiveXObject("Msxml.DOMDocument");
+		    }
 		} else
 			doc = doc.ownerDocument ||
 				doc.getOwnerDocument && doc.getOwnerDocument() ||
@@ -293,8 +302,10 @@
 			},
 			end: function( tag ) {
 			    if (elems.length > 0) {
-				curParentNode = elems.pop();
-
+				elems.pop();
+				}
+			    if (elems.length > 0) {
+				curParentNode = elems[elems.length-1];
 			    } else {
 				curParentNode = one.body;
 			    }
@@ -371,7 +382,7 @@
 	    } catch (e) {
 		//IE forbids setting innerHTML of a documentElement
 		//back-off to Resig's html parser
-		doc = HTMLtoDOM(docStr);
+		doc = HTMLtoDOM(markup);
 	    }
  
             return doc;
