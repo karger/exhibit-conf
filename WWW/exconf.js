@@ -1,30 +1,5 @@
 //Configuration of editor
-ExhibitConf = {idCounter: 0};
-
-//aloha's mahalo doesn't work inside an iframe
-ExhibitConf.getAlohaEditable = function(node) {
-    // if the element is a textarea than route to the editable div
-    if (node.get(0).nodeName.toLowerCase() === 'textarea' ) {
-	id = id + '-aloha';
-    }
-    // serach all editables for id
-    for (var i = 0, editablesLength = Aloha.editables.length; i < editablesLength; i++) {
-	if (Aloha.editables[i].getId() == id) {
-	    return Aloha.editables[i];
-	}
-    }     
-    return null;
-};
-
-ExhibitConf.mahalo = function(node) {
-    jQuery.fn.mahalo = function () {
-	return this.each(function () {
-	    if (Aloha.isEditable(this)) {
-		ExhibitConf.getAlohaEditable(jQuery(this)).destroy();
-	    }
-	});
-    }; 
-};
+ExhibitConf = {};
 
 ExhibitConf.exprSelector = function (props) {
     props = props || ExhibitConf.win.database.getAllProperties(),
@@ -38,6 +13,7 @@ ExhibitConf.exprSelector = function (props) {
 	selector.toggle();
 	input.toggle();
     });
+    $('<option></option>').text('(none)').attr('value','').appendTo(selector);
     $.each(props, function(i, p) {
 	$('<option></option>').text(p).attr('value','.'+p)
 	    .appendTo(selector);
@@ -58,6 +34,12 @@ ExhibitConf.exprSelector = function (props) {
 	}
     }
 
+    container.change = function(handler) {
+	box.change(handler);
+	selector.change(handler);
+	input.change(handler);
+	return container;
+	}
     return container;
 };
 
@@ -90,11 +72,11 @@ ExhibitConf.exprSelector = function (props) {
 	"ThumbnailView": {superclassName: "OrderedViewFrame"},
 	"TimelineView": {
 	    specs: {
-		"start": {type: "text"},
-		"end": {type: "text"},
-		"colorKey": {type: "text"},
-		"iconKey": {type: "text"},
-		"eventLabel": {type: "text"},
+		"start": {type: "expr"},
+		"end": {type: "expr"},
+		"colorKey": {type: "expr"},
+		"iconKey": {type: "expr"},
+		"eventLabel": {type: "expr"},
 		"caption": {type: "text"}
 	    }
 	}
@@ -224,7 +206,8 @@ ExhibitConf.exprSelector = function (props) {
 	    exprInput = function(state) {
 		var inp = ExhibitConf.exprSelector(EC.win.database
 						   .getAllProperties());
-		inp.val(state);
+		if (state) {inp.val(state);}
+		return inp;
 	    };
 
             if (settings.hasOwnProperty(field)) {
@@ -246,8 +229,10 @@ ExhibitConf.exprSelector = function (props) {
                                    .change(updater));
                 break;
 	    case 'expr':
-		inputHolder.append(exprInput().change(exprUpdater));
+		inputHolder.append(exprInput(value).change(updater));
 		break;
+	    default:
+		return $();
             }
 
             $('<td></td>').text(field).appendTo(row);
@@ -317,7 +302,7 @@ ExhibitConf.exprSelector = function (props) {
     };
 
     EC.configureElement = function(elt) {
-        var specs, comp, className, title, field, eField, promise,
+        var specs, cleanSpecs, comp, className, title, field, eField, promise,
         settings = {},
         role = EC.win.Exhibit.getRoleAttribute(elt);
 
@@ -347,7 +332,13 @@ ExhibitConf.exprSelector = function (props) {
 	}
 
         specs = settingSpecs[comp][className].specs;
-        EC.win.Exhibit.SettingsUtilities.collectSettingsFromDOM(elt, specs, settings);
+	cleanSpecs = $.extend(true, {}, specs);
+	for (field in cleanSpecs) {
+	    if (cleanSpecs.hasOwnProperty(field) &&
+		(cleanSpecs[field].type=='expr'))
+		cleanSpecs[field].type='text';
+	    }
+        EC.win.Exhibit.SettingsUtilities.collectSettingsFromDOM(elt, cleanSpecs, settings);
 
 	settings.className = className;
         promise = settingsDialog(comp, title, settings);
@@ -369,7 +360,8 @@ ExhibitConf.exprSelector = function (props) {
             for (field in specs) {
                 if (specs.hasOwnProperty(field)) {
                     eField = nameAttribute(comp,field);
-                    if (settings[field] === specs[field].defaultValue) {
+                    if (typeof(settings[field]) === 'undefined'
+			|| settings[field] === specs[field].defaultValue) {
                         elt.removeAttr(eField);
                     } else {
                         elt.attr(eField, settings[field]);
@@ -386,63 +378,110 @@ ExhibitConf.exprSelector = function (props) {
 	win.database.removeAllStatements();
 	if (win.Exhibit.History)
 	    win.Exhibit.History.eraseState();
-        win.database.loadLinks(function() {
+	$(document).one('dataload.exhibit',function() {
 		//need to set proper 'this" on configure call
 		//so can't just pass configureFromDOM to loadLinks
 		win.exhibit.configureFromDOM();
-	});
+	    });
+        win.database.loadLinks()
     };
 
+    EC.dataMimeTypes = [];
     EC.configureData = function() {
-	var link = $('[rel="exhibit/data"]'),
-	linkVal = link.attr('href'),
-	linkType = link.attr('type'),
-	linkField = $('<input type="textfield" width="50"></input>'),
-	typeField = $('<select></select>')
-	    .append('<option value="application/json">JSON</option>')
-	    .append('<option value="application/jsonp">JSONP</option>'),
-	instructions = $('<div><div>').text('Enter data URL'),
-	dialog = $('<div></div>').append(instructions)
-	    .append(linkField)
-	    .append(typeField)
-	    .val(linkType),
-	saveLinks = function() {
-	    dialog.dialog('close');
-	    if (link === null) {
-		link = $('<link rel="exhibit/data">').appendTo('head');
+	var selectMimes = function() {
+	    var importers=Exhibit.Importer._registry.getKeys(
+		Exhibit.Importer._registryKey)
+	    , options=$('<select></select>')
+	    , i;
+
+	    for (i=0; i<importers.length; i++) {
+		$('<option/>').text(importers[i]).appendTo(options);
 	    }
-	    if (linkVal !== linkField.val()
-		|| linkType !== typeField.val()) {
-		link.attr('href',linkField.val());
-		if (typeField.val()) {
-		    link.attr('type',typeField.val());
-		};
-		EC.win.Exhibit.Lens._commonProperties = null; //clear cache
-		EC.reinit();
+	    return options;
+	}
+	, init = function() {
+	    if (EC.dataMimeTypes.length > 0) {
+		return;
+		}
+	    EC.dataMimeTypes=selectMimes();
+
+	    EC.dataDialog = $('<div><table class="linkFields"></table></div>')
+	    EC.dataDialog.dialog({
+		title: 'Edit Data Links',
+		autoOpen: false,
+		width: 600,
+		minWidth: 380,
+	        height: 300,
+		modal: true, 
+		buttons: {
+		    "Save": saveLinks,
+		    "Cancel": function() { 
+			$(this).dialog('close');
+		    },
+		}
+	    });
+	}
+
+	, saveLinks = function() {
+	    $("link[rel=exhibit-data]").remove();
+	    $('.linkFields',this).find("tr").slice(0,-1).each(function() {
+	        var parts=$(this).find("td");
+	        var href=parts.eq(0).children().val().trim();
+	        var type=parts.eq(1).children().val();
+	        if (href) {
+		    $('<link rel="exhibit-data">')
+		        .attr('href',href)
+		        .attr('type',type)
+		        .appendTo('head');
+		}
+	    });
+	    $(this).dialog('close');
+	    EC.reinit();
+	}
+
+	, editLinks = function() {
+	    init();
+	    var linkFields=$('.linkFields',EC.dataDialog)
+	    , killMe=function() {
+	        $(this).parent().parent().remove();
 	    }
-	    
-	};
+	    , button=$('<input type="button">').val("remove")
+		.click(killMe).wrap("<td></td>").parent()
+	    , addBlankLine = function() {
+	        var field = $('<input type="textfield" value="">');
+	        var unBlank = function () {
+		    field.parent().parent().append(button.clone(true));
+		    addBlankLine();
+		    field.unbind('keydown',unBlank);
+		}
+	        field.keydown(unBlank);
+	        field.wrap("<td>").parent().wrap("<tr>").parent()
+		    .append(EC.dataMimeTypes.clone()
+			    .val("application/json")
+			    .wrap("<td>").parent())
+		    .appendTo(linkFields);
+	    };
 
-	if (link.length > 0) {
-	    linkField.val(linkVal);
-	    typeField.val(linkType);
-	};
+	    linkFields.empty();
+	    $('link[rel="exhibit-data"]')
+		.each(function() {
+		    var val= $('<input type="textfield"></input>')
+			.val($(this).attr('href'))
+			.wrap("<td>").parent().wrap("<tr>").parent()
+			.append(
+			    EC.dataMimeTypes.clone()
+				.val($(this).attr("type"))
+				.wrap("<td>").parent())
+			.append(button.clone(true));
+		    linkFields.append(val);
+		});
+	    addBlankLine();
+	    EC.dataDialog.dialog('open');
+	}
 
-	dialog.dialog({
-            title: 'Edit Data Link',
-            width: 400,
-	    height: 300,
-            modal: true, 
-            buttons: {
-		"OK": saveLinks,
-		"Cancel": function() { 
-                    $(this).dialog('close');
-		},
-            }
-	});
-	
+	editLinks();
+    };
 
-    }
 
     EC.unrender = function(dom) {
         dom = $(dom || document);
@@ -465,6 +504,7 @@ ExhibitConf.exprSelector = function (props) {
 	dom = $(dom || EC.win.document.body);
         $('[ex\\:role="view"]',dom).addClass('exhibit-editable');
         $('[ex\\:role="facet"]',dom).addClass('exhibit-editable');
+        $('[ex\\:role="viewPanel"]',dom).addClass('exhibit-editable');
 	//weird things happen if ids get added after rendering
 	//unfortunately, aloha sometimes does that.
 	//preclude by arranging to remove them
@@ -480,7 +520,7 @@ ExhibitConf.exprSelector = function (props) {
     EC.rerender = function(win) {
 	win = win || EC.win;
 	EC.unrender(win.document);
-	if (win.Exhibit.History)
+	if (win.Exhibit && win.Exhibit.History)
 	    win.Exhibit.History.eraseState();
 	win.exhibit._uiContext = 
 	    Exhibit.UIContext.createRootContext({},win.exhibit); //sledgehammer to clear old state
@@ -578,7 +618,7 @@ ExhibitConf.exprSelector = function (props) {
         showEditButton = function () {
 	    //quick hack: set parent css so edit button absolute positioning
 	    //is relative to parent
-	    editButton.detach();
+	    editButton.detach().text('Edit ' + $(this).attr('ex:role'));
 	    $(this).css('position','relative').prepend(editButton);
 	    return false; //stop propagation
         };
@@ -591,6 +631,7 @@ ExhibitConf.exprSelector = function (props) {
 	    $(EC.win.document.body).addClass('exhibit-editing');
 	    $('.exhibit-editable').alohaBlock();
 	    $('#main').aloha()
+	    EC.rerender();
 	    editButton.click(handleEditClick); //shouldn't have to
 	    //re-add this every time button is moved but handler is
 	    //somehow getting dropped when I detach the button
@@ -607,8 +648,7 @@ ExhibitConf.exprSelector = function (props) {
 	    $('.exhibit-editable').mahaloBlock();
 	    $('.exhibit-wrapper').children().unwrap();
 	    unMarkExhibit();
-	    EC.unrender(EC.win.document);
-	    EC.win.exhibit.configureFromDOM();
+	    EC.rerender(EC.win);
         };
     })();
 })();
@@ -693,24 +733,28 @@ ExhibitConf.createLensEditor = function(lens, lensContainer) {
 	return deferred.promise();
     };
 
-    editor.addNode = function(tagName, attr) {
-	var node = $(document.createElement(tagName)),
-	//remember/restore range since interaction w/dialog clear it
+    editor.addNode = function(node, attr) {
+	//remember/restore range since interaction w/dialog clears it
 	//range = Aloha.getSelection(EC.win).getRangeAt(0), 
 	range = EC.win.getSelection().getRangeAt(0),
-	insertLensContent = function() {
-	    //hack because can only insert strings
+	insertNodeContent = function() {
 	    range.insertNode(node.get(0));
 	};
-	editContent(node,attr).done(insertLensContent);
+	editContent(node,attr).done(insertNodeContent);
     };
 
+    editor.addAnchor = function() {
+	var node = $('<a/>').text('new link');
+	editor.addNode(node,'ex:href-content');
+    };
+
+
     editor.addImg = function() {
-	editor.addNode('img','ex:src-content');
+	editor.addNode($('<img/>'),'ex:src-content');
     };
 
     editor.addText = function() {
-	editor.addNode('span','ex:content');
+	editor.addNode($('<span/>'),'ex:content');
     };
 
     editor.stopEdit = function() {

@@ -2,6 +2,10 @@
   border: 3px solid red;
 }
 
+.exhibit-editing .exhibit-editable:hover .exhibit-editable {
+  margin: 20px;
+}
+
 .exhibit-edit-tab {
   position: absolute;
   top:0;

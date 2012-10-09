@@ -18,7 +18,14 @@ ExhibitConf.Editor = {};
 
 	EE.addComponent = function(component, parent) {
 	    config = ExhibitConf.configureElement(component);
-	    parent.append(component);
+	    if (parent) {
+		//insert in specified node
+		parent.append(component);
+	    } else {
+		//insert at current selection
+		range = EC.win.getSelection().getRangeAt(0),
+		range.insertNode(component.get(0));
+	    }
 	    config.done(function () {ExhibitConf.rerender()});
 	    config.fail(function() {
 		    component.remove();
@@ -26,7 +33,7 @@ ExhibitConf.Editor = {};
 	};
     
 	EE.open = function() {
-	    EE.preview();
+	    EE.stopEdit();
 	    EC.open().done(EE.beginEdit);
 	};
 
@@ -46,13 +53,11 @@ ExhibitConf.Editor = {};
 	};
 
 	EE.addFacet = function() {
-	    EE.addComponent($('<div ex:role="facet" class="exhibit-editable"></div>'),
-			    $('#facet-container'));
+	    EE.addComponent($('<div ex:role="facet" class="exhibit-editable"></div>'));
 	};
 
 	EE.addView = function() {
-	    EE.addComponent($('<div ex:role="view" class="exhibit-editable"></div>'),
-			    $('.main-panel'));
+	    EE.addComponent($('<div ex:role="view" class="exhibit-editable"></div>'));
 	};
     
 	//let an invoked state specify what should happen when we 
@@ -66,7 +71,7 @@ ExhibitConf.Editor = {};
 	    EE.cleanupCallback = callback;
 	};
 
-	EE.preview = function() {
+	EE.stopEdit = function() {
 	    EE.cleanup();
 	    $('#main').show();
 	    ExhibitConf.rerender();
@@ -114,12 +119,16 @@ ExhibitConf.Editor = {};
 	    EE.lensEditor.addImg();
 	};
 
+	EE.addLensAnchor = function() {
+	    EE.lensEditor.addAnchor();
+	};
+
 	EE.beginEdit = function(data) {
 	    var 
-	    alohaStuff = $('.aloha,.aloha-ui,.aloha-ui-context,.pasteContainer');
+	    clean = data.replace(/<!DOCTYPE[^>]*>/,""),
 	    parser = new DOMParser(),
 	    script = /script/i,
-	    doc = parser.parseFromString(data, "text/html");
+	    doc = parser.parseFromString(clean, "text/html");
 
 	    //block script execution in new doc
 	    //without disturbing position
@@ -131,9 +140,13 @@ ExhibitConf.Editor = {};
 		    }
 		});
 
-	    $('body',document).empty()
-	        .append($('body',doc).detach().children())
-	        .append(alohaStuff);
+	    //can't move elements between docs so must detach first.
+	    $('body',document)
+	        .children()
+		.not('.aloha,.aloha-ui,.aloha-ui-context,.pasteContainer')
+		.remove();
+	    $('body',document)
+	        .prepend($('body',doc).detach().children());
 	    document.title = "Exedit: " + $('title',doc).text();
 	    $('head',document).empty().append($('head',doc).detach().children());
 
@@ -142,41 +155,10 @@ ExhibitConf.Editor = {};
 	}
 
 	EE.newExhibit = function() {
-	    EE.preview();
+	    EE.stopEdit();
 	    $.get("blank.html", EE.beginEdit);
 	}
 
-
-	EE.createEditorIframe = function(loc) {
-	    var deferred = $.Deferred(),
-	    frame = $('<iframe id="page-editor-iframe" src="blank.html"></iframe>')
-	    .appendTo(loc), 
-	    frameBare = frame.get(0);
-
-	    setInterval(function () {
-		    //don't cache .contentWindow.document; may change during load
-		    frame.height($(frameBare.contentWindow.document.body).height()+100);
-		}, 100);
-	    frame.load(function() {
-		    deferred.resolve(frame);
-		});
-	    return deferred.promise();
-	}
-
-	EE.setupIframe = function(frame) {
-	    var styles = [
-			  "http://cdn.jsdelivr.net/alohaeditor/aloha-0.21.0/css/aloha.css",
-			  "exconf.css",
-			  ],
-	    win = frame.get(0).contentWindow,
-	    head = $(win.document.head);
-
-	    for (i=0; i < styles.length; i++) {
-		style = $('<link rel="stylesheet" class="exhibitconf-added">')
-		    .attr('href', styles[i]);
-		head.append(style);
-	    }
-	};
 
 	EE.init = function() {
 	    EE.menu = $('#exedit-menu').detach()
@@ -202,29 +184,29 @@ ExhibitConf.Editor = {};
 	    spacer=$('<div class="exedit"></div>');
 	    $('.lens-insert-menu',menu).hide();
 	    $('.page-insert-menu',menu).hide();
-	    configMenuBar(menu, {"new-button":  EE.newExhibit,
-			"open-button": EE.open,
-			"save-button": EE.saveAs,
-			"preview-button": EE.preview,
-			"edit-exhibit-button": EE.editPage,
-			"edit-lens-button": EE.editLens,
-			"edit-data-button": ExhibitConf.configureData,
-			"help-button": todo,
-			"wizard-button": todo,
-			"simle-button": EE.visitSimile,
-			"add-view-button": EE.addView,
-			"add-facet-button": EE.addFacet,
-			"add-content-button": EE.addLensText,
-			"add-link-button": todo,
-			"add-img-button": EE.addLensImg
-			});
+	    configMenuBar(menu, 
+			  {"new-button":  EE.newExhibit,
+			   "open-button": EE.open,
+			   "save-button": EE.saveAs,
+			   "preview-button": EE.stopEdit,
+			   "edit-exhibit-button": EE.editPage,
+			   "edit-lens-button": EE.editLens,
+			   "edit-data-button": ExhibitConf.configureData,
+			   "help-button": todo,
+			   "wizard-button": todo,
+			   "simile-button": EE.visitSimile,
+			   "add-view-button": EE.addView,
+			   "add-facet-button": EE.addFacet,
+			   "add-content-button": EE.addLensText,
+			   "add-link-button": EE.addLensAnchor,
+			   "add-img-button": EE.addLensImg
+			  });
 	    EE.headStuff.appendTo(EC.win.document.head);
 	    menu.prependTo(EC.win.document.body);
 	    spacer.height(menu.height()).prependTo(EC.win.document.body);
-
 	};
 
-	$(document).ready(function() {
+	$(document).on("scriptsLoaded.exhibit",function() {
 		var maybeSetData = function() {
 		    var i, url, arg,
 		    link = $('[rel="exhibit/data"]',ExhibitConf.win),
