@@ -84,20 +84,20 @@ ExhibitConf.exprSelector = function (props) {
 
     settingSpecs.facets = {
 	"ListFacet": {label: "List",
-                      specs: {"expression": {type: "text", defaultValue: ""}}},
+                      specs: {"expression": {type: "expr", defaultValue: ""}}},
 	"CloudFacet": {label: "Tag Cloud",
-		       specs: {"expression": {type: "text", defaultValue: ""}}},
+		       specs: {"expression": {type: "expr", defaultValue: ""}}},
 	"NumericRangeFacet": {label: "Numeric Range",
-			      specs: {"expression": {type: "text", 
+			      specs: {"expression": {type: "expr", 
 						     defaultValue: ""}}},
 	"HierarchicalFacet": {label: "Hierarchical List",
-			      specs: {"expression": {type: "text", 
+			      specs: {"expression": {type: "expr", 
 						     defaultValue: ""}}},
 	"TextSearchFacet": {label: "Text Search", 
-			    specs: {"expressions": {type: "text", 
+			    specs: {"expressions": {type: "expr", 
 						    defaultValue: ""}}},
 	"AlphaRangeFacet": {label: "Alphabetical Range",
-			    specs: {"expression": {type: "text", 
+			    specs: {"expression": {type: "expr", 
 						   defaultValue: ""}}}
 
     };
@@ -425,7 +425,7 @@ ExhibitConf.exprSelector = function (props) {
 		var jq = $(this)
 		, label = jq.find('input').val()
 		, view = jq.data('exconf-view');
-		vai.attr('ex:label',label).appendTo(panel);
+		view.attr('ex:label',label).appendTo(panel);
 		//then put back those we're keeping (plus new)
 		});
 	    if (whichView.val()) {
@@ -644,12 +644,7 @@ ExhibitConf.exprSelector = function (props) {
         elt = button.parent();
 
         button.detach();
-        EC.configureElement(elt).done(function () {
-	    if (EC.win.Exhibit.getRoleAttribute(elt) === 'facet') {
-		f = findFacet(elt);
-		f.dispose();  //otherwise facet keeps restricting items!
-	    }
-	    EC.rerender()});
+        EC.configureElement(elt).done(function () {EC.rerender()});
     };
 
     EC.open = function() {
