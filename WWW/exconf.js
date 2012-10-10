@@ -284,6 +284,7 @@ ExhibitConf.exprSelector = function (props) {
         parts.tabs('select','#' + comp + '-' + settings.className);
         parts.tabs('remove',0); //remove dummy tab once all else initialized
         dialog.dialog({
+	    "zIndex": 10101, //cover aloha toolbar
 	    "buttons": {
 		"Update": function() {
                     dialog.dialog('close');
@@ -312,18 +313,18 @@ ExhibitConf.exprSelector = function (props) {
             title = "Configure View";
             className = EC.win.Exhibit.getAttribute(elt,"viewClass") 
 		|| "TileView";
+	    if (!className.endsWith("View")) className += "View";
             break;
         case "facet":
             comp = "facets";
             title = "Configure Facet";
             className = EC.win.Exhibit.getAttribute(elt,"facetClass") 
 		|| "ListFacet";
+	    if (!className.endsWith("Facet")) className += "Facet";
             break;
         case "viewPanel":
-            comp = "viewPanel";
-            title = "Configure View Panel";
-            className = "viewPanel";
-            break;
+	    return EC.configureViewPanel(elt);
+            //special case; don't use component handler code
         }
 	
 	if (!initialized) {
@@ -372,6 +373,99 @@ ExhibitConf.exprSelector = function (props) {
 	return promise;
     };
 
+    EC.configureViewPanel = function(panel) {
+	var 
+	deferred = $.Deferred()
+	, views = panel.find('[ex\\:role="view"]')
+	, viewCount = views.length
+	, whichView = $('<select class="initial-view"></select>')
+	, viewList = $('<table class="view-list"/>')
+	.sortable({axis: "y",
+		   items: "tr"})
+	, setCount = function(count) {
+	    var val = whichView.val() || 0;
+	    whichView.empty();
+	    for (i=0; i<count; i++) {
+		$('<option value="'+i+'"/>').text(i).appendTo(whichView);
+		}
+	    whichView.val(val < count? val : 0);
+	    }
+	, addView = function() {
+	    viewList.append(makeViewEntry($('<div ex:role="view" ex:viewClass="TileView"></div>')));
+	    setCount(++viewCount);
+	    }
+	, addViewButton = $('<input type="Button"/>')
+	    .val('Add View')
+	    .click(addView)
+	, dialog = $('<div/>').text('Drag views to reorder')
+	, makeViewEntry = function(view) {
+	    var entry = $('<tr class="exconf-view"/>').data('exconf-view',view)
+	    , className = Exhibit.getAttribute(view, "viewClass")
+	    , label = Exhibit.getAttribute(view,"viewLabel") ||
+		Exhibit.getAttribute(view,"label") ||
+		Exhibit.ViewPanel.getViewLabel(className) ||
+		className ||
+		Exhibit._("%viewPanel.noViewLabel")
+	    , remove = $('<input type="button"/>')
+		.val("Remove")
+		.click(function() {
+		    entry.remove();
+		    setCount(--viewCount);
+		    })
+	    $('<td>\u00BB</td>').appendTo(entry);
+	    $('<input type="textfield">').val(label)
+		.appendTo('<td/>').parent().appendTo(entry)
+	    $('<td/>').append(remove).appendTo(entry);
+	    return entry;
+	    }
+	, save = function() {
+	    dialog.dialog("close");
+	    views.detach(); //remove them all
+	    viewList.find('.exconf-view').each(function() {
+		var jq = $(this)
+		, label = jq.find('input').val()
+		, view = jq.data('exconf-view');
+		vai.attr('ex:label',label).appendTo(panel);
+		//then put back those we're keeping (plus new)
+		});
+	    if (whichView.val()) {
+		panel.attr('ex:initialView',whichView.val());
+	    } else {
+		panel.removeAttr('ex:initialView');
+	    }
+	    deferred.resolve();
+	};
+
+	setCount(views.length);
+	dialog.empty();
+	dialog.text('Drag views to reorder.  Set a label for each view.');
+	$('<div>Choose initial view number:</div>')
+	    .append(whichView)
+	    .appendTo(dialog);
+	views.each(function() {
+	    viewList.append(makeViewEntry(this));
+	});
+	dialog.append(viewList)
+	    .append(addViewButton);
+	dialog.dialog({
+	    title: 'Edit View Panel',
+	    width: 600,
+	    minWidth: 380,
+	    height: 300,
+	    modal: true, 
+	    buttons: {
+		"Save": save,
+		"Cancel": function() { 
+		    $(this).dialog('destroy');
+		    deferred.reject();
+		},
+	    },
+	    "zIndex": 10101 //cover aloha toolbar
+	});
+
+	return deferred.promise();
+    };
+
     EC.reinit = function(win) {
 	win = win || EC.win;
 	EC.unrender(win.document);
@@ -418,7 +512,8 @@ ExhibitConf.exprSelector = function (props) {
 		    "Cancel": function() { 
 			$(this).dialog('close');
 		    },
-		}
+		},
+		"zIndex": 10101 //cover aloha toolbar
 	    });
 	}
 
@@ -552,7 +647,7 @@ ExhibitConf.exprSelector = function (props) {
         EC.configureElement(elt).done(function () {
 	    if (EC.win.Exhibit.getRoleAttribute(elt) === 'facet') {
 		f = findFacet(elt);
-		f.dispose();
+		f.dispose();  //otherwise facet keeps restricting items!
 	    }
 	    EC.rerender()});
     };
@@ -728,7 +823,8 @@ ExhibitConf.createLensEditor = function(lens, lensContainer) {
 	},
 		       "modal": true, 
 		       "title": "Choose Field Content",
-		       "width": "550"
+		       "width": "550",
+		       zIndex: 10101, //cover aloha toolbar
 		      });
 	return deferred.promise();
     };
