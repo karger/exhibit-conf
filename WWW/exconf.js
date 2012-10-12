@@ -2,12 +2,15 @@
 ExhibitConf = {};
 
 ExhibitConf.exprSelector = function (props) {
+    var
+    selector = $('<select></select>')
+    , input = $('<input type="textfield">').hide()
+    , box = $('<input type="checkbox">')
+    , advanced = $('<div>Advanced expression: </div>').append(box)
+    , container = $('<div></div>').append(selector)
+	.append(input).append(advanced);
+
     props = props || ExhibitConf.win.database.getAllProperties(),
-    selector = $('<select></select>'),
-    input = $('<input type="textfield">').hide(),
-    box = $('<input type="checkbox">'),
-    advanced = $('<div>Advanced expression: </div>').append(box),
-    container = $('<div></div>').append(selector).append(input).append(advanced);
 
     box.change(function() {
 	selector.toggle();
@@ -466,10 +469,23 @@ ExhibitConf.exprSelector = function (props) {
 	return deferred.promise();
     };
 
+
     EC.reinit = function(win) {
+	var killFacets = function(w) {
+	    var i
+	    , facets = w && w.exhibit && w.exhibit.getUIContext
+	    && w.exhibit.getUIContext().getCollection()._facets;
+	    
+	    if (facets) {
+		for (i=0; i<facets.length; i++) {
+		    facets[i].dispose();
+		}
+	    }
+	};
+
 	win = win || EC.win;
+	killFacets(win);
 	EC.unrender(win.document);
-	win.database.removeAllStatements();
 	if (win.Exhibit.History)
 	    win.Exhibit.History.eraseState();
 	$(document).one('dataload.exhibit',function() {
@@ -577,9 +593,8 @@ ExhibitConf.exprSelector = function (props) {
 	editLinks();
     };
 
-
     EC.unrender = function(dom) {
-        dom = $(dom || document);
+        dom = $(dom || EC.win.document);
         dom.find('.exhibit-controlPanel').remove();
         dom.find('.exhibit-toolboxWidget-popup').remove();
         dom.find('[ex\\:role="facet"]').empty().removeClass('exhibit-facet');
@@ -644,9 +659,15 @@ ExhibitConf.exprSelector = function (props) {
         elt = button.parent();
 
         button.detach();
-        EC.configureElement(elt).done(function () {EC.rerender()});
+        EC.configureElement(elt).done(function () {
+		if (EC.win.Exhibit.getRoleAttribute(elt) === 'facet') {
+		    f = findFacet(elt);
+		    f.dispose();
+		}
+		EC.rerender()}
+	    );
     };
-
+	
     EC.open = function() {
 	var deferred = $.Deferred(),
 	input = $('<input type="file"></input>');
@@ -717,10 +738,10 @@ ExhibitConf.exprSelector = function (props) {
         EC.startEdit = function() {
 	    markExhibit();
 //	    $(EC.win.document.body)
-//	        .wrapInner('<div class="exhibit-wrapper"></div');
+//	        .wrapInner('<div class="exhibit-wrapper"></div>');
 	    $(EC.win.document.body).addClass('exhibit-editing');
 	    $('.exhibit-editable').alohaBlock();
-	    $('#main').aloha()
+	    $('#main').aloha();
 	    EC.rerender();
 	    editButton.click(handleEditClick); //shouldn't have to
 	    //re-add this every time button is moved but handler is
@@ -742,7 +763,6 @@ ExhibitConf.exprSelector = function (props) {
         };
     })();
 })();
-
 
 ExhibitConf.createLensEditor = function(lens, lensContainer) {
     //lensContainer should be in exhibit document, to inherit styles etc.

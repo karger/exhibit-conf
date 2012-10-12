@@ -14,15 +14,22 @@
       //aloha needs jquery 1.9; enable merge once 1.9 is available
       //define('jquery', function() {return window.jQuery;});
       //define('jqueryui', function() {return window.jQuery.ui;});
+      Aloha = {settings: {}};
+      Aloha.settings.toolbar = {
+          tabs: [
+              {label: 'Exhibit',
+               components: ["addFacet", "addView", "addViewPanel"]
+              }
+	  ],
+      };
     </script>
     <script  src="/karger/Aloha/lib/aloha-bare.js"
-	    data-aloha-plugins="common/align,common/block,common/commands,common/format,common/image,common/link,common/paste,common/table,common/undo"></script>
+	    data-aloha-plugins="common/align,common/block,common/commands,common/format,common/image,common/link,common/paste,common/table,common/undo,common/list"></script>
     <link  class="exedit" rel="stylesheet" href="/karger/Aloha/css/aloha.css"/>
 
     <!-- Exhibit -->
-    <script src="http://people.csail.mit.edu/karger/Exhibit3/api/exhibit-api.js?bundle=false"></script>
-    <script src="http://people.csail.mit.edu/karger/Exhibit3/api/extensions/time/time-extension.js?bundle=false"></script>
-    <link rel="exhibit/data" href="nobelists.js">
+    <script src="http://people.csail.mit.edu/karger/Exhibit3/api/exhibit-api.js?autocreate=false&bundle=false"></script>
+    <link rel="exhibit-extension" href="http://people.csail.mit.edu/karger/Exhibit3/api/extensions/time/time-extension.js?bundle=false"></script>
 
     <!-- Exhibit editor -->
     <link  class="exedit" rel="stylesheet" href="menubar.css">
@@ -79,7 +86,6 @@
       </li>
       <li class='title'><a href='#'>Exhibit Editor</a></li>
     </ul> <!-- end of menu bar -->
-    <div class="topnav-spacer"></div>
 
     <div id="lens-template" ex:role="lens" style="display:none">
       Name: <span ex:content=".label"></span>
