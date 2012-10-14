@@ -15,11 +15,38 @@
     border-right:1px solid #c4dbe7;
     border-top:1px solid #c4dbe7;
     border-bottom:2px solid #c4dbe7;
-    background: #f5f5f5;
     z-index: 500
 }
 
-/*needs to match heigh of topnav bar*/
+/*complicated incantations for gradient on topnav bar*/
+.topnav {
+background: rgb(242,246,248); /* Old browsers */
+background: -moz-linear-gradient(top,  rgba(242,246,248,1) 0%,
+    rgba(216,225,231,1) 38%, rgba(181,198,208,1) 60%,
+    rgba(224,239,249,1) 100%); /* FF3.6+ */
+background: -webkit-gradient(linear, left top, left bottom,
+    color-stop(0%,rgba(242,246,248,1)),
+    color-stop(38%,rgba(216,225,231,1)),
+    color-stop(60%,rgba(181,198,208,1)),
+    color-stop(100%,rgba(224,239,249,1))); /* Chrome,Safari4+ */
+background: -webkit-linear-gradient(top,  rgba(242,246,248,1)
+    0%,rgba(216,225,231,1) 38%,rgba(181,198,208,1)
+    60%,rgba(224,239,249,1) 100%); /* Chrome10+,Safari5.1+ */
+background: -o-linear-gradient(top,  rgba(242,246,248,1)
+    0%,rgba(216,225,231,1) 38%,rgba(181,198,208,1)
+    60%,rgba(224,239,249,1) 100%); /* Opera 11.10+ */
+background: -ms-linear-gradient(top,  rgba(242,246,248,1)
+    0%,rgba(216,225,231,1) 38%,rgba(181,198,208,1)
+    60%,rgba(224,239,249,1) 100%); /* IE10+ */
+background: linear-gradient(to bottom,  rgba(242,246,248,1)
+    0%,rgba(216,225,231,1) 38%,rgba(181,198,208,1)
+    60%,rgba(224,239,249,1) 100%); /* W3C */
+filter: progid:DXImageTransform.Microsoft.gradient(
+    startColorstr='#f2f6f8', endColorstr='#e0eff9',GradientType=0 );
+    /* IE6-9 */
+}
+
+/*needs to match height of topnav bar*/
 .topnav-spacer {
     clear: both;
     height: 30px;
@@ -27,7 +54,7 @@
 
 .topnav li {
     display:inline;
-    font-size:12px;
+    font-size:14px;
     font-weight:bold;
     margin:0;
     padding:0;
@@ -42,7 +69,7 @@
     display:inline-block;
     border-right:1px solid #C2C2C2;
     border-top:1px solid #fff;
-    background: #f5f5f5;
+/*    background: #f5f5f5;*/
     
     -webkit-transition:color 0.2s linear, background 0.2s linear;       
     -moz-transition:color 0.2s linear, background 0.2s linear;  
@@ -63,3 +90,4 @@
     float: right;
     border-left-style: none
 }
+

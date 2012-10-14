@@ -222,13 +222,16 @@ ExhibitConf.Editor = {
 	spacer.height(menu.height()).insertAfter(menu);
     };
 
+    if (console) {
+	console.log('waiting');
+	}
     $(document).on("scriptsLoaded.exhibit",function() {
 	var parseUrlArgs = function() {
-	    var urlArgs = window.location.search.substr(1).split('&')
+	    var args = window.location.search.substr(1).split('&')
 	    , arg, split, result={};
 
-	    for (i=0; i<urlArgs.length; i++) {
-		arg = urlArgs[i];
+	    for (i=0; i<args.length; i++) {
+		arg = args[i];
 		split = arg.indexOf('=');
 		key = arg.slice(0,split);
 		val = arg.slice(split+1);
@@ -256,19 +259,16 @@ ExhibitConf.Editor = {
 	}
 	, urlArgs = parseUrlArgs();
 
-	EC.win = window;
 	EE.init();
 
-	if (urlArgs.data) {
-	    $.ajax("blank.html", {dataType: "text"})
-		.done(function(data) {
-			EE.insertDoc(data);
+	$.ajax(urlArgs.page || "blank.html", {dataType: "text"})
+	    .done(function(data) {
+		    EE.insertDoc(data);
+		    if (urlArgs.data) {
 			setDataLink(urlArgs.data, urlArgs.type);
-			EE.activate();
-			ExhibitConf.reinit();
-		    }) 
-	} else {
-	    EE.openUrl("blank.html");
-	}
-    });
+		    }
+		    EE.activate();
+		    ExhibitConf.reinit();
+		})
+	    });
 })();
