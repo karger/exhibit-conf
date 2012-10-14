@@ -50,7 +50,7 @@ ExhibitConf.exprSelector = function (props) {
 (function() {
     var EC = ExhibitConf,
 	nameAttribute, configureSettingSpecs, makeSettingsTable, settingsDialog,
-	markExhibit, findFacet, handleEditClick, 
+	markExhibit, findFacet,
 	initialized = false;
     settingSpecs = {};
 
@@ -656,20 +656,6 @@ ExhibitConf.exprSelector = function (props) {
 	    console.log("can't find facet!");
 	}
     };
-
-    handleEditClick = function(event) {
-        var button = $(event.target), f,
-        elt = button.parent();
-
-        button.detach();
-        EC.configureElement(elt).done(function () {
-		if (EC.win.Exhibit.getRoleAttribute(elt) === 'facet') {
-		    f = findFacet(elt);
-		    f.dispose();
-		}
-		EC.rerender()}
-	    );
-    };
 	
     EC.open = function() {
 	var deferred = $.Deferred(),
@@ -727,14 +713,43 @@ ExhibitConf.exprSelector = function (props) {
 
 	(function () {
 
-	    var editButton = $('<button class="exhibit-edit-tab">Edit</button>')
-		, deleteButton =  $('<button class="exhibit-delete-tab">Delete</button>')
+	    var handleEditClick = function(event) {
+		var widget = $(event.target).parents('.exhibit-edit-tab')
+		, f
+		, elt = widget.parent();
 
-		, showEditButton = function () {
+		widget.detach();
+		EC.configureElement(elt).done(function () {
+			if (EC.win.Exhibit.getRoleAttribute(elt) === 'facet') {
+			    f = findFacet(elt);
+			    f.dispose();
+			}
+			EC.rerender()}
+		    );
+	    }
+	    , handleDeleteClick = function(event) {
+		var widget = $(event.target).parents('.exhibit-edit-tab')
+		, elt = widget.parent();
+
+		widget.detach();
+		elt.mahaloBlock();
+		elt.detach();
+		EC.rerender();
+	    }
+	    , editButton = $('<button>Edit</button>')
+	    , deleteButton =  $('<button>Delete</button>')
+	    , editWidget = $('<div class="exhibit-edit-tab"/>')
+		.append(editButton)
+		.append(deleteButton)
+	    
+	    , showEditWidget = function () {
 		//quick hack: set parent css so edit button absolute positioning
 		//is relative to parent
-		editButton.detach().text('Edit ' + $(this).attr('ex:role'));
-		$(this).css('position','relative').prepend(editButton);
+		var role = Exhibit.getRoleAttribute();
+		editButton.text('Edit ' + role);
+		deleteButton.text('Delete ' + role);
+		editWidget.detach();
+		$(this).css('position','relative').prepend(editWidget);
 		return false; //stop propagation
 	    };
 
@@ -747,17 +762,19 @@ ExhibitConf.exprSelector = function (props) {
 		$('.exhibit-editable').alohaBlock();
 		$('#main').aloha();
 		EC.rerender();
+		deleteButton.click(handleDeleteClick);
 		editButton.click(handleEditClick); //shouldn't have to
 		//re-add this every time button is moved but handler is
 		//somehow getting dropped when I detach the button
 		$(EC.win.document.body).on('mouseover','.exhibit-editable',
-					   showEditButton);
+					   showEditWidget);
 	    };
 
 	    EC.stopEdit = function () {
 		$(EC.win.document.body)
-		.removeClass('exhibit-editing')
-		.off('mouseover','.exhibit-editable',showEditButton);
+		    .removeClass('exhibit-editing')
+		    .off('mouseover','.exhibit-editable',showEditWidget);
+		deleteButton.off('click',handleDeleteClick);
 		editButton.off('click',handleEditClick); //remove since re-add
 		$('#main').mahalo()
 		$('.exhibit-editable').mahaloBlock();
