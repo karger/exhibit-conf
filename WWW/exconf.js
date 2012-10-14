@@ -1,5 +1,5 @@
 //Configuration of editor
-ExhibitConf = {};
+ExhibitConf = {ranges: []};
 
 ExhibitConf.exprSelector = function (props) {
     var
@@ -8,24 +8,24 @@ ExhibitConf.exprSelector = function (props) {
     , box = $('<input type="checkbox">')
     , advanced = $('<div>Advanced expression: </div>').append(box)
     , container = $('<div></div>').append(selector)
-    .append(input).append(advanced);
+	.append(input).append(advanced);
 
     props = props || ExhibitConf.win.database.getAllProperties(),
 
     box.change(function() {
-	    selector.toggle();
-	    input.toggle();
-	});
+	selector.toggle();
+	input.toggle();
+    });
     $('<option></option>').text('(none)').attr('value','').appendTo(selector);
     $.each(props, function(i, p) {
-	    $('<option></option>').text(p).attr('value','.'+p)
-		.appendTo(selector);
-	});
+	$('<option></option>').text(p).attr('value','.'+p)
+	    .appendTo(selector);
+    });
     container.val = function(set) {
 	if (arguments.length === 0) {
 	    return box.is(':checked') ?
-	    input.val() :
-	    selector.val();
+		input.val() :
+		selector.val();
 	} else {
 	    input.val(set);
 	    if (props.indexOf(set) == -1) {
@@ -49,9 +49,9 @@ ExhibitConf.exprSelector = function (props) {
 
 (function() {
     var EC = ExhibitConf,
-	nameAttribute, configureSettingSpecs, makeSettingsTable, settingsDialog,
-	markExhibit, findFacet,
-	initialized = false;
+    nameAttribute, configureSettingSpecs, makeSettingsTable, settingsDialog,
+    markExhibit, findFacet,
+    initialized = false;
     settingSpecs = {};
 
     nameAttribute = function(elmt, name) {
@@ -109,7 +109,7 @@ ExhibitConf.exprSelector = function (props) {
 	"viewPanel": {label: "View Panel",
                       specs: {initialView: {type: "int",
                                             defaultValue: 0}}
-	}
+		     }
     };
 
 
@@ -218,24 +218,24 @@ ExhibitConf.exprSelector = function (props) {
             }
             switch (specs[field].type) {
             case 'text':
-	    inputHolder.append(textInput(value).change(updater));
-	    break;
+		inputHolder.append(textInput(value).change(updater));
+		break;
             case 'int':
-	    inputHolder.append(intInput(value).change(updater));
-	    break;
+		inputHolder.append(intInput(value).change(updater));
+		break;
             case 'boolean':
-	    inputHolder.append(boolInput(value).change(boolUpdater));
-	    break;
+		inputHolder.append(boolInput(value).change(boolUpdater));
+		break;
             case 'enum':
-	    inputHolder.append(enumInput(specs[field].choices,
-					 value)
-			       .change(updater));
-	    break;
+		inputHolder.append(enumInput(specs[field].choices,
+					     value)
+				   .change(updater));
+		break;
 	    case 'expr':
-	    inputHolder.append(exprInput(value).change(updater));
-	    break;
+		inputHolder.append(exprInput(value).change(updater));
+		break;
 	    default:
-	    return $();
+		return $();
             }
 
             $('<td></td>').text(field).appendTo(row);
@@ -263,10 +263,10 @@ ExhibitConf.exprSelector = function (props) {
         dialog = $('<div></div>').append(parts);
 
         parts.tabs({
-		'add': function(event, ui) {
-		    $(ui.tab).data("class-name",className);
-		    return true;
-		}});
+	    'add': function(event, ui) {
+		$(ui.tab).data("class-name",className);
+		return true;
+	    }});
 
         for (className in settingSpecs[comp]) {
             if (settingSpecs[comp].hasOwnProperty(className)) {
@@ -276,32 +276,32 @@ ExhibitConf.exprSelector = function (props) {
         }
 
         parts.tabs({'select': function(event, ui) {
-		    settings.className = $(ui.tab).data("class-name");
-		    $(ui.panel).empty()
-		    .append(
-			    makeSettingsTable(settingSpecs[comp][settings.className].specs,
-					      settings));
-		    return true;
-		}});
+	    settings.className = $(ui.tab).data("class-name");
+	    $(ui.panel).empty()
+		.append(
+		    makeSettingsTable(settingSpecs[comp][settings.className].specs,
+				      settings));
+	    return true;
+	}});
         
         parts.tabs('select','#' + comp + '-' + settings.className);
         parts.tabs('remove',0); //remove dummy tab once all else initialized
         dialog.dialog({
-		"zIndex": 10101, //cover aloha toolbar
-		    "buttons": {
-		    "Update": function() {
-			dialog.dialog('close');
-			deferred.resolve(settings);
-		    },
-			"Cancel": function () {
-			    dialog.dialog('close');
-			    deferred.reject();
-			}
+	    "zIndex": 10101, //cover aloha toolbar
+	    "buttons": {
+		"Update": function() {
+		    dialog.dialog('close');
+		    deferred.resolve(settings);
 		},
-		    "modal": true, 
-			"title": title,
-			"width": "550"
-			});
+		"Cancel": function () {
+		    dialog.dialog('close');
+		    deferred.reject();
+		}
+	    },
+	    "modal": true, 
+	    "title": title,
+	    "width": "550"
+	});
         return deferred.promise();
     };
 
@@ -348,31 +348,31 @@ ExhibitConf.exprSelector = function (props) {
         promise = settingsDialog(comp, title, settings);
 
 	promise.done(function () {
-		//settings have been updated; push to element.  preserves 
-		//non-conflicting settings; useful if switch back to
-		//previous facet/view class.
-		var field, eField;
+	    //settings have been updated; push to element.  preserves 
+	    //non-conflicting settings; useful if switch back to
+	    //previous facet/view class.
+	    var field, eField;
 
-		//reset to settings for new class
-		specs = settingSpecs[comp][settings.className].specs;
-		if (comp === 'facets') {
-		    elt.attr('ex:facetClass',settings.className);
-		} else if (comp === 'views') {
-		    elt.attr('ex:viewClass',settings.className);
-		}
-		delete settings.className; //so won't make an attribute
-		for (field in specs) {
-		    if (specs.hasOwnProperty(field)) {
-			eField = nameAttribute(comp,field);
-			if (typeof(settings[field]) === 'undefined'
-			    || settings[field] === specs[field].defaultValue) {
-			    elt.removeAttr(eField);
-			} else {
-			    elt.attr(eField, settings[field]);
-			}
+	    //reset to settings for new class
+	    specs = settingSpecs[comp][settings.className].specs;
+	    if (comp === 'facets') {
+		elt.attr('ex:facetClass',settings.className);
+	    } else if (comp === 'views') {
+		elt.attr('ex:viewClass',settings.className);
+	    }
+	    delete settings.className; //so won't make an attribute
+	    for (field in specs) {
+		if (specs.hasOwnProperty(field)) {
+		    eField = nameAttribute(comp,field);
+		    if (typeof(settings[field]) === 'undefined'
+			|| settings[field] === specs[field].defaultValue) {
+			elt.removeAttr(eField);
+		    } else {
+			elt.attr(eField, settings[field]);
 		    }
 		}
-	    });
+	    }
+	});
 	return promise;
     };
 
@@ -383,8 +383,8 @@ ExhibitConf.exprSelector = function (props) {
 	, viewCount = views.length
 	, whichView = $('<select class="initial-view"></select>')
 	, viewList = $('<table class="view-list"/>')
-	.sortable({axis: "y",
-		   items: "tr"})
+	    .sortable({axis: "y",
+		       items: "tr"})
 	, setCount = function(count) {
 	    var val = whichView.val() || 0;
 	    whichView.empty();
@@ -398,26 +398,26 @@ ExhibitConf.exprSelector = function (props) {
 	    setCount(++viewCount);
 	}
 	, addViewButton = $('<input type="Button"/>')
-	.val('Add View')
-	.click(addView)
+	    .val('Add View')
+	    .click(addView)
 	, dialog = $('<div/>').text('Drag views to reorder')
 	, makeViewEntry = function(view) {
 	    var entry = $('<tr class="exconf-view"/>').data('exconf-view',view)
 	    , className = Exhibit.getAttribute(view, "viewClass")
 	    , label = Exhibit.getAttribute(view,"viewLabel") ||
-	    Exhibit.getAttribute(view,"label") ||
-	    Exhibit.ViewPanel.getViewLabel(className) ||
-	    className ||
-	    Exhibit._("%viewPanel.noViewLabel")
+		Exhibit.getAttribute(view,"label") ||
+		Exhibit.ViewPanel.getViewLabel(className) ||
+		className ||
+		Exhibit._("%viewPanel.noViewLabel")
 	    , remove = $('<input type="button"/>')
-	    .val("Remove")
-	    .click(function() {
+		.val("Remove")
+		.click(function() {
 		    entry.remove();
 		    setCount(--viewCount);
 		})
 	    $('<td>\u00BB</td>').appendTo(entry);
 	    $('<input type="textfield">').val(label)
-	    .appendTo('<td/>').parent().appendTo(entry)
+		.appendTo('<td/>').parent().appendTo(entry)
 	    $('<td/>').append(remove).appendTo(entry);
 	    return entry;
 	}
@@ -425,12 +425,12 @@ ExhibitConf.exprSelector = function (props) {
 	    dialog.dialog("close");
 	    views.detach(); //remove them all
 	    viewList.find('.exconf-view').each(function() {
-		    var jq = $(this)
-			, label = jq.find('input').val()
-			, view = jq.data('exconf-view');
-		    view.attr('ex:label',label).appendTo(panel);
-		    //then put back those we're keeping (plus new)
-		});
+		var jq = $(this)
+		, label = jq.find('input').val()
+		, view = jq.data('exconf-view');
+		view.attr('ex:label',label).appendTo(panel);
+		//then put back those we're keeping (plus new)
+	    });
 	    if (whichView.val()) {
 		panel.attr('ex:initialView',whichView.val());
 	    } else {
@@ -443,28 +443,28 @@ ExhibitConf.exprSelector = function (props) {
 	dialog.empty();
 	dialog.text('Drag views to reorder.  Set a label for each view.');
 	$('<div>Choose initial view number:</div>')
-	.append(whichView)
-	.appendTo(dialog);
+	    .append(whichView)
+	    .appendTo(dialog);
 	views.each(function() {
-		viewList.append(makeViewEntry(this));
-	    });
+	    viewList.append(makeViewEntry(this));
+	});
 	dialog.append(viewList)
-	.append(addViewButton);
+	    .append(addViewButton);
 	dialog.dialog({
-		title: 'Edit View Panel',
-		    width: 600,
-		    minWidth: 380,
-		    height: 300,
-		    modal: true, 
-		    buttons: {
-		    "Save": save,
-			"Cancel": function() { 
-			$(this).dialog('destroy');
-			deferred.reject();
-		    },
-			},
-		    "zIndex": 10101 //cover aloha toolbar
-			});
+	    title: 'Edit View Panel',
+	    width: 600,
+	    minWidth: 380,
+	    height: 300,
+	    modal: true, 
+	    buttons: {
+		"Save": save,
+		"Cancel": function() { 
+		    $(this).dialog('destroy');
+		    deferred.reject();
+		},
+	    },
+	    "zIndex": 10101 //cover aloha toolbar
+	});
 
 	return deferred.promise();
     };
@@ -474,7 +474,7 @@ ExhibitConf.exprSelector = function (props) {
 	var killFacets = function(w) {
 	    var i
 	    , facets = w && w.exhibit && w.exhibit.getUIContext
-	    && w.exhibit.getUIContext().getCollection()._facets;
+		&& w.exhibit.getUIContext().getCollection()._facets;
 	    
 	    if (facets) {
 		for (i=0; i<facets.length; i++) {
@@ -489,10 +489,10 @@ ExhibitConf.exprSelector = function (props) {
 	if (win.Exhibit.History.enabled)
 	    win.Exhibit.History.eraseState();
 	$(document).one('dataload.exhibit',function() {
-		//need to set proper 'this" on configure call
-		//so can't just pass configureFromDOM to loadLinks
-		win.exhibit.configureFromDOM();
-	    });
+	    //need to set proper 'this" on configure call
+	    //so can't just pass configureFromDOM to loadLinks
+	    win.exhibit.configureFromDOM();
+	});
         win.database.loadLinks()
     };
 
@@ -500,7 +500,7 @@ ExhibitConf.exprSelector = function (props) {
     EC.configureData = function() {
 	var selectMimes = function() {
 	    var importers=Exhibit.Importer._registry.getKeys(
-							     Exhibit.Importer._registryKey)
+		Exhibit.Importer._registryKey)
 	    , options=$('<select></select>')
 	    , i;
 
@@ -517,35 +517,35 @@ ExhibitConf.exprSelector = function (props) {
 
 	    EC.dataDialog = $('<div><table class="linkFields"></table></div>')
 	    EC.dataDialog.dialog({
-		    title: 'Edit Data Links',
-		    autoOpen: false,
-		    width: 600,
-		    minWidth: 380,
-		    height: 300,
-		    modal: true, 
-		    buttons: {
-			"Save": saveLinks,
-			"Cancel": function() { 
-			    $(this).dialog('close');
-			},
+		title: 'Edit Data Links',
+		autoOpen: false,
+		width: 600,
+		minWidth: 380,
+		height: 300,
+		modal: true, 
+		buttons: {
+		    "Save": saveLinks,
+		    "Cancel": function() { 
+			$(this).dialog('close');
 		    },
-		    "zIndex": 10101 //cover aloha toolbar
-		});
+		},
+		"zIndex": 10101 //cover aloha toolbar
+	    });
 	}
 
 	, saveLinks = function() {
 	    $("link[rel=exhibit-data]").remove();
 	    $('.linkFields',this).find("tr").slice(0,-1).each(function() {
-		    var parts=$(this).find("td");
-		    var href=parts.eq(0).children().val().trim();
-		    var type=parts.eq(1).children().val();
-		    if (href) {
-			$('<link rel="exhibit-data">')
-			    .attr('href',href)
-			    .attr('type',type)
-			    .appendTo('head');
-		    }
-		});
+		var parts=$(this).find("td");
+		var href=parts.eq(0).children().val().trim();
+		var type=parts.eq(1).children().val();
+		if (href) {
+		    $('<link rel="exhibit-data">')
+			.attr('href',href)
+			.attr('type',type)
+			.appendTo('head');
+		}
+	    });
 	    $(this).dialog('close');
 	    EC.reinit();
 	}
@@ -557,7 +557,7 @@ ExhibitConf.exprSelector = function (props) {
 	        $(this).parent().parent().remove();
 	    }
 	    , button=$('<input type="button">').val("remove")
-	    .click(killMe).wrap("<td></td>").parent()
+		.click(killMe).wrap("<td></td>").parent()
 	    , addBlankLine = function() {
 	        var field = $('<input type="textfield" value="">');
 	        var unBlank = function () {
@@ -567,20 +567,20 @@ ExhibitConf.exprSelector = function (props) {
 		}
 	        field.keydown(unBlank);
 	        field.wrap("<td>").parent().wrap("<tr>").parent()
-		.append(EC.dataMimeTypes.clone()
-			.val("application/json")
-			.wrap("<td>").parent())
-		.appendTo(linkFields);
+		    .append(EC.dataMimeTypes.clone()
+			    .val("application/json")
+			    .wrap("<td>").parent())
+		    .appendTo(linkFields);
 	    };
 
 	    linkFields.empty();
 	    $('link[rel="exhibit-data"]')
-	    .each(function() {
+		.each(function() {
 		    var val= $('<input type="textfield"></input>')
 			.val($(this).attr('href'))
 			.wrap("<td>").parent().wrap("<tr>").parent()
 			.append(
-				EC.dataMimeTypes.clone()
+			    EC.dataMimeTypes.clone()
 				.val($(this).attr("type"))
 				.wrap("<td>").parent())
 			.append(button.clone(true));
@@ -599,14 +599,14 @@ ExhibitConf.exprSelector = function (props) {
         dom.find('.exhibit-toolboxWidget-popup').remove();
         dom.find('[ex\\:role="facet"]').empty().removeClass('exhibit-facet');
         dom.find('[ex\\:role="view"]')
-	.removeClass('exhibit-view')
-	.children()
-	.not('[ex\\:role]')
-	.remove();
+	    .removeClass('exhibit-view')
+	    .children()
+	    .not('[ex\\:role]')
+	    .remove();
         dom.find('[ex\\:role="viewPanel"]')
-	.children()
-	.not('[ex\\:role]')
-	.remove();
+	    .children()
+	    .not('[ex\\:role]')
+	    .remove();
 	dom.find('.exconf-no-id').removeAttr('id');
     };
 
@@ -656,26 +656,26 @@ ExhibitConf.exprSelector = function (props) {
 	    console.log("can't find facet!");
 	}
     };
-	
+    
     EC.open = function() {
 	var deferred = $.Deferred(),
 	input = $('<input type="file"></input>');
 
 	input.change(function(evt) {
-		var file = evt.target.files[0],
-		    reader = new FileReader();
-		reader.onload = function() {
-		    deferred.resolve(reader.result);
-		};
-		reader.readAsText(file);
-	    });
+	    var file = evt.target.files[0],
+	    reader = new FileReader();
+	    reader.onload = function() {
+		deferred.resolve(reader.result);
+	    };
+	    reader.readAsText(file);
+	});
 	input.click();
 	return deferred.promise();
     };
 
     EC.saveHtml = function(html) {
 	uri = "data:application/octet-stream;charset=utf-8,"
-	+ encodeURIComponent('<html>'+html+'</html>');
+	    + encodeURIComponent('<html>'+html+'</html>');
 	window.open(uri,"_blank");
     };
 
@@ -692,222 +692,239 @@ ExhibitConf.exprSelector = function (props) {
 	scriptlessHead = head.split(scriptRe).join(' '),
 	insertScript = function(s) {
 	    var src = s.match(/src\s*=\s*['"]([^"']*?)["']/i)[1]; //'"
-						       scr = document.createElement("script");
-						       scr.type="text/javascript";
-						       scr.src=src;
-						       doc.head.appendChild(scr);
-						       };
+	    scr = document.createElement("script");
+	    scr.type="text/javascript";
+	    scr.src=src;
+	    doc.head.appendChild(scr);
+	};
 	
-	    if (head) {
-		$(doc.head).empty().append(scriptlessHead);
+	if (head) {
+	    $(doc.head).empty().append(scriptlessHead);
+	}
+	if (scripts.length > 0) {
+	    for (i=0; i<scripts.length; i++) {
+		insertScript(scripts[i]);
 	    }
-	    if (scripts.length > 0) {
-		for (i=0; i<scripts.length; i++) {
-		    insertScript(scripts[i]);
+	}
+	if (body) {
+	    $(doc.body).empty().append(body);
+	}
+    };
+
+    (function () {
+
+	var handleEditClick = function(event) {
+	    var widget = $(event.target).parents('.exhibit-edit-tab')
+	    , f
+	    , elt = widget.parent();
+
+	    widget.detach();
+	    EC.configureElement(elt).done(function () {
+		if (EC.win.Exhibit.getRoleAttribute(elt) === 'facet') {
+		    f = findFacet(elt);
+		    f.dispose();
 		}
-	    }
-	    if (body) {
-		$(doc.body).empty().append(body);
-	    }
-	};
+		EC.rerender()}
+					 );
+	}
+	, handleDeleteClick = function(event) {
+	    var widget = $(event.target).parents('.exhibit-edit-tab')
+	    , elt = widget.parent();
 
-	(function () {
-
-	    var handleEditClick = function(event) {
-		var widget = $(event.target).parents('.exhibit-edit-tab')
-		, f
-		, elt = widget.parent();
-
-		widget.detach();
-		EC.configureElement(elt).done(function () {
-			if (EC.win.Exhibit.getRoleAttribute(elt) === 'facet') {
-			    f = findFacet(elt);
-			    f.dispose();
-			}
-			EC.rerender()}
-		    );
-	    }
-	    , handleDeleteClick = function(event) {
-		var widget = $(event.target).parents('.exhibit-edit-tab')
-		, elt = widget.parent();
-
-		widget.detach();
-		elt.mahaloBlock();
-		elt.detach();
-		EC.rerender();
-	    }
-	    , editButton = $('<button>Edit</button>')
-	    , deleteButton =  $('<button>Delete</button>')
-	    , editWidget = $('<div class="exhibit-edit-tab"/>')
-		.append(editButton)
-		.append(deleteButton)
-	    
-	    , showEditWidget = function () {
-		//quick hack: set parent css so edit button absolute positioning
-		//is relative to parent
-		var role = Exhibit.getRoleAttribute();
-		editButton.text('Edit ' + role);
-		deleteButton.text('Delete ' + role);
-		editWidget.detach();
-		$(this).css('position','relative').prepend(editWidget);
-		return false; //stop propagation
-	    };
-
-
-	    EC.startEdit = function() {
-		markExhibit();
-		//	    $(EC.win.document.body)
-		//	        .wrapInner('<div class="exhibit-wrapper"></div>');
-		$(EC.win.document.body).addClass('exhibit-editing');
-		$('.exhibit-editable').alohaBlock();
-		$('#main').aloha();
-		EC.rerender();
-		deleteButton.click(handleDeleteClick);
-		editButton.click(handleEditClick); //shouldn't have to
-		//re-add this every time button is moved but handler is
-		//somehow getting dropped when I detach the button
-		$(EC.win.document.body).on('mouseover','.exhibit-editable',
-					   showEditWidget);
-	    };
-
-	    EC.stopEdit = function () {
-		$(EC.win.document.body)
-		    .removeClass('exhibit-editing')
-		    .off('mouseover','.exhibit-editable',showEditWidget);
-		deleteButton.off('click',handleDeleteClick);
-		editButton.off('click',handleEditClick); //remove since re-add
-		$('#main').mahalo()
-		$('.exhibit-editable').mahaloBlock();
-		$('.exhibit-wrapper').children().unwrap();
-		unMarkExhibit();
-		EC.rerender(EC.win);
-	    };
-	})();
-    })();
-
-    ExhibitConf.createLensEditor = function(lens, lensContainer) {
-	//lensContainer should be in exhibit document, to inherit styles etc.
-	var EC = ExhibitConf,
-	editor = {},
-	props = EC.win.database.getAllProperties(),
-    
-	alohaEditor = Aloha.jQuery(lensContainer.get(0)).empty(),
-	cleanAlohaEditor = function() {
-	    //          for future, use Aloha api
-	    //	    var edited = editor.children().eq(0),
-	    //	    editId = edited.attr('id'),
-	    //	    content = Aloha.getEditableById(editId).getContents(true);
-
-	    //	    var copy = editor.clone();
-	    //	    copy.removeAttr('contenteditable');
-	    //		.removeClass('aloha-editable aloha-editable-active')
-	    return alohaEditor.html();
-	},
-
-	timer = null,
-
-	updateLens = function() {
-	    lens.empty().append(cleanAlohaEditor());
+	    widget.detach();
+	    elt.mahaloBlock();
+	    elt.detach();
 	    EC.rerender();
-	},
-
-	deferredUpdateLens = function() {
-	    clearTimeout(timer);
-	    timer = setTimeout(updateLens,200);
-	},
-
-	createChangeTracker = function(signature, handler, period) {
-	    //invoke the returned function to deactivate the watcher
-	    var current = signature(),
-	    checkChange = function() {
-		var next=signature();
-		if (next !== current) {
-		    current = next;
-		    handler();
-		}
-	    },
-	    timer = setInterval(checkChange, period || 100);
-	    return {
-		dispose: function() {
-		    clearInterval(timer);
-		}
-	    };
-	},
-	tracker = createChangeTracker(cleanAlohaEditor, deferredUpdateLens),
-
-	editContent = function(content, attr) {
-	    var 
-	    deferred = $.Deferred(),
-	    dialog = $('<div><div>Property to use:</div></div>'),
-	    attr = attr || 'ex:content',
-	    selector = EC.exprSelector(props);
-
-	    if (content.attr(attr)) {
-		selector.val(content.attr(attr));
+	}
+	, editButton = $('<button>Edit</button>')
+	, deleteButton =  $('<button>Delete</button>')
+	, editWidget = $('<div class="exhibit-edit-tab"/>')
+	    .append(editButton)
+	    .append(deleteButton)
+	
+	, showEditWidget = function () {
+	    //quick hack: set parent css so edit button absolute positioning
+	    //is relative to parent
+	    var role = Exhibit.getRoleAttribute();
+	    editWidget.detach();
+	    editButton.text('Edit ' + role);
+	    deleteButton.text('Delete ' + role);
+	    deleteButton.click(handleDeleteClick);
+	    editButton.click(handleEditClick); //shouldn't have to
+	    //re-add this every time button is moved but handler is
+	    //somehow getting dropped when I detach the button
+	    $(this).css('position','relative').prepend(editWidget);
+	    return false; //stop propagation
+	}
+	, saveRange = function() {
+	    /* having some bizarre problems saving ranges
+	       when I use cloneRange()
+	       the cloned range ends up mutating as selection changes
+	       so, hack, manually clone the range */
+	    var sel = EC.win.getSelection()
+	    , range
+	    if (sel.rangeCount > 0) {
+		range = sel.getRangeAt(0);
+		EC.range = {sc: range.startContainer,
+			    so: range.startOffset,
+			    ec: range.endContainer,
+			    eo: range.endContainerOffset};
 	    }
-	    dialog.append(selector);
-	    dialog.dialog({"buttons": {
-			"OK": function() {
-			    dialog.dialog('close');
-			    content.attr(attr,selector.val());
-			    deferred.resolve(content);
-			},
-			    "Cancel": function () {
-				dialog.dialog('close');
-				deferred.reject();
-			    }
-		    },
-			"modal": true, 
-			    "title": "Choose Field Content",
-			    "width": "550",
-			    zIndex: 10101, //cover aloha toolbar
-			    });
-	    return deferred.promise();
-	};
-
-	editor.addNode = function(node, attr) {
-	    //remember/restore range since interaction w/dialog clears it
-	    //range = Aloha.getSelection(EC.win).getRangeAt(0), 
-	    range = EC.win.getSelection().getRangeAt(0),
-	    insertNodeContent = function() {
-		range.insertNode(node.get(0));
-	    };
-	    editContent(node,attr).done(insertNodeContent);
-	};
-
-	editor.addAnchor = function() {
-	    var node = $('<a/>').text('new link');
-	    editor.addNode(node,'ex:href-content');
 	};
 
 
-	editor.addImg = function() {
-	    editor.addNode($('<img/>'),'ex:src-content');
+	EC.startEdit = function() {
+	    markExhibit();
+	    //	    $(EC.win.document.body)
+	    //	        .wrapInner('<div class="exhibit-wrapper"></div>');
+	    $(EC.win.document.body).addClass('exhibit-editing');
+	    $('.exhibit-editable').alohaBlock();
+	    $('#main').aloha();
+	    $('#exedit-menu').mouseenter(saveRange);
+	    EC.rerender();
+	    $(EC.win.document.body).on('mouseover','.exhibit-editable',
+				       showEditWidget);
 	};
 
-	editor.addText = function() {
-	    editor.addNode($('<span/>'),'ex:content');
+	EC.stopEdit = function () {
+	    $(EC.win.document.body)
+		.removeClass('exhibit-editing')
+		.off('mouseover','.exhibit-editable',showEditWidget);
+	    deleteButton.off('click',handleDeleteClick);
+	    editButton.off('click',handleEditClick); //remove since re-add
+	    $('#main').mahalo();
+	    $('#exedit-menu').off('mouseenter',saveRange);
+	    $('.exhibit-editable').mahaloBlock();
+	    $('.exhibit-wrapper').children().unwrap();
+	    unMarkExhibit();
+	    EC.rerender(EC.win);
 	};
+    })();
+})();
 
-	editor.stopEdit = function() {
-	    tracker.dispose(); //destroys tracker
-	    alohaEditor.mahalo();
-	    //	ExhibitConf.mahalo(alohaEditor);
-	    alohaEditor.empty();
-	    lensContainer.removeClass('lens-edit-lens-container');
+ExhibitConf.createLensEditor = function(lens, lensContainer) {
+    //lensContainer should be in exhibit document, to inherit styles etc.
+    var EC = ExhibitConf,
+    editor = {},
+    props = EC.win.database.getAllProperties(),
+    
+    alohaEditor = Aloha.jQuery(lensContainer.get(0)).empty(),
+    cleanAlohaEditor = function() {
+	//          for future, use Aloha api
+	//	    var edited = editor.children().eq(0),
+	//	    editId = edited.attr('id'),
+	//	    content = Aloha.getEditableById(editId).getContents(true);
+
+	//	    var copy = editor.clone();
+	//	    copy.removeAttr('contenteditable');
+	//		.removeClass('aloha-editable aloha-editable-active')
+	return alohaEditor.html();
+    },
+
+    timer = null,
+
+    updateLens = function() {
+	lens.empty().append(cleanAlohaEditor());
+	EC.rerender();
+    },
+
+    deferredUpdateLens = function() {
+	clearTimeout(timer);
+	timer = setTimeout(updateLens,200);
+    },
+
+    createChangeTracker = function(signature, handler, period) {
+	//invoke the returned function to deactivate the watcher
+	var current = signature(),
+	checkChange = function() {
+	    var next=signature();
+	    if (next !== current) {
+		current = next;
+		handler();
+	    }
+	},
+	timer = setInterval(checkChange, period || 100);
+	return {
+	    dispose: function() {
+		clearInterval(timer);
+	    }
 	};
+    },
+    tracker = createChangeTracker(cleanAlohaEditor, deferredUpdateLens),
 
-	lensContainer.addClass('lens-edit-lens-container');
-	$(lens)
+    editContent = function(content, attr) {
+	var 
+	deferred = $.Deferred(),
+	dialog = $('<div><div>Property to use:</div></div>'),
+	attr = attr || 'ex:content',
+	selector = EC.exprSelector(props);
+
+	if (content.attr(attr)) {
+	    selector.val(content.attr(attr));
+	}
+	dialog.append(selector);
+	dialog.dialog({"buttons": {
+	    "OK": function() {
+		dialog.dialog('close');
+		content.attr(attr,selector.val());
+		deferred.resolve(content);
+	    },
+	    "Cancel": function () {
+		dialog.dialog('close');
+		deferred.reject();
+	    }
+	},
+		       "modal": true, 
+		       "title": "Choose Field Content",
+		       "width": "550",
+		       zIndex: 10101, //cover aloha toolbar
+		      });
+	return deferred.promise();
+    };
+
+    editor.addNode = function(node, attr) {
+	//remember/restore range since interaction w/dialog clears it
+	//range = Aloha.getSelection(EC.win).getRangeAt(0), 
+	range = EC.win.getSelection().getRangeAt(0),
+	insertNodeContent = function() {
+	    range.insertNode(node.get(0));
+	};
+	editContent(node,attr).done(insertNodeContent);
+    };
+
+    editor.addAnchor = function() {
+	var node = $('<a/>').text('new link');
+	editor.addNode(node,'ex:href-content');
+    };
+
+
+    editor.addImg = function() {
+	editor.addNode($('<img/>'),'ex:src-content');
+    };
+
+    editor.addText = function() {
+	editor.addNode($('<span/>'),'ex:content');
+    };
+
+    editor.stopEdit = function() {
+	tracker.dispose(); //destroys tracker
+	alohaEditor.mahalo();
+	//	ExhibitConf.mahalo(alohaEditor);
+	alohaEditor.empty();
+	lensContainer.removeClass('lens-edit-lens-container');
+    };
+
+    lensContainer.addClass('lens-edit-lens-container');
+    $(lens)
 	.contents().clone()
 	.appendTo(alohaEditor.empty()),
-	alohaEditor.aloha();
-	alohaEditor.on('click','[ex\\:content]',function() {
-		editContent($(this));
-	    });
-	alohaEditor.on('click','img[ex\\:src-content]',function() {
-		editContent($(this),'ex:src-content');
-	    });
+    alohaEditor.aloha();
+    alohaEditor.on('click','[ex\\:content]',function() {
+	editContent($(this));
+    });
+    alohaEditor.on('click','img[ex\\:src-content]',function() {
+	editContent($(this),'ex:src-content');
+    });
 
-	return editor;
-    }
+    return editor;
+}
