@@ -326,8 +326,9 @@ ExhibitConf.exprSelector = function (props) {
             if (!className.endsWith("Facet")) className += "Facet";
             break;
         case "viewPanel":
-            return EC.configureViewPanel(elt);
             //special case; don't use component handler code
+            return EC.configureViewPanel(elt);
+            break;
         }
         
         if (!initialized) {
@@ -400,7 +401,7 @@ ExhibitConf.exprSelector = function (props) {
         , addViewButton = $('<input type="Button"/>')
             .val('Add View')
             .click(addView)
-        , dialog = $('<div/>').text('Drag views to reorder')
+        , dialog = $('<div/>').text('Drag views by >> to reorder')
         , makeViewEntry = function(view) {
             var entry = $('<tr class="exconf-view"/>').data('exconf-view',view)
             , className = Exhibit.getAttribute(view, "viewClass")
@@ -736,8 +737,9 @@ ExhibitConf.exprSelector = function (props) {
             elt.detach();
             EC.rerender();
         }
-        , editButton = $('<button>Edit</button>')
+        , editButton = $('<button>Edit</button>').click(handleEditClick)
         , deleteButton =  $('<button>Delete</button>')
+              .click(handleDeleteClick)
         , editWidget = $('<div class="exhibit-edit-tab"/>')
             .append(editButton)
             .append(deleteButton)
@@ -745,14 +747,10 @@ ExhibitConf.exprSelector = function (props) {
         , showEditWidget = function () {
             //quick hack: set parent css so edit button absolute positioning
             //is relative to parent
-            var role = Exhibit.getRoleAttribute();
+            var role = Exhibit.getRoleAttribute(this);
             editWidget.detach();
             editButton.text('Edit ' + role);
             deleteButton.text('Delete ' + role);
-            deleteButton.click(handleDeleteClick);
-            editButton.click(handleEditClick); //shouldn't have to
-            //re-add this every time button is moved but handler is
-            //somehow getting dropped when I detach the button
             $(this).css('position','relative').prepend(editWidget);
             return false; //stop propagation
         }
