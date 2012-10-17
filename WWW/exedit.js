@@ -105,6 +105,13 @@ ExhibitConf.Editor = {
 	ExhibitConf.rerender();
     };
 
+    EE.startEdit = function() {
+        EE.cleanup(function () {
+            ExhibitConf.stopEditData();
+        });
+        ExhibitConf.startEditData();
+    };
+
     EE.editPage = function() {
 	EE.cleanup(function () {
 	    $('.page-insert-menu').hide();
@@ -220,7 +227,8 @@ ExhibitConf.Editor = {
 		       "preview-button": EE.stopEdit,
 		       "edit-exhibit-button": EE.editPage,
 		       "edit-lens-button": EE.editLens,
-		       "edit-data-button": ExhibitConf.configureData,
+		       "edit-links-button": ExhibitConf.configureData,
+		       "edit-data-button": ExhibitConf.startEditData,
 		       "help-button": todo,
 		       "wizard-button": todo,
 		       "simile-button": EE.visitSimile,

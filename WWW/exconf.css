@@ -1,3 +1,4 @@
+/* page editing */
 .exhibit-editing .exhibit-editable:hover {
   border: 3px solid red;
 }
@@ -12,6 +13,8 @@
   right:0;
   z-index: 1000;
 }
+
+/* lens editing */
 
 .lens-edit-lens-container {
     border: 2px solid black;
@@ -31,14 +34,17 @@
 .lens-edit-lens-container [ex\:src-content]:hover {
     border: 2px solid red;
 }
-#editor-iframe-container iframe {
-    width: 100%;
-    background-color: transparent;
-    border: 0px none transparent;
-    overflow: visible;
-    padding: 0px;
-}
 
 div.exhibit-toolboxWidget-popup {
     display: none;
+}
+
+/* data editing */
+
+.exhibit-editing-data [ex\:content]:hover {
+    border: 2px solid rgba(255,255,99,0.5);
+}
+
+.exhibit-editing-data .exhibit-edit-content {
+    background-color: rgb(255,255,99);
 }

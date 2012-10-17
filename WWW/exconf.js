@@ -394,7 +394,7 @@ ExhibitConf.exprSelector = function (props) {
             whichView.val(val < count? val : 0);
         }
         , addView = function() {
-            viewList.append(makeViewEntry($('<div ex:role="view" ex:viewClass="TileView"></div>')));
+            viewList.append(makeViewEntry($('<div ex:role="view" ex:viewClass="TileView" class="exhibit-editable"></div>')));
             setCount(++viewCount);
         }
         , addViewButton = $('<input type="Button"/>')
@@ -428,7 +428,7 @@ ExhibitConf.exprSelector = function (props) {
                 var jq = $(this)
                 , label = jq.find('input').val()
                 , view = jq.data('exconf-view');
-                view.attr('ex:label',label).appendTo(panel);
+                $(view).attr('ex:label',label).appendTo(panel);
                 //then put back those we're keeping (plus new)
             });
             if (whichView.val()) {
@@ -927,4 +927,89 @@ ExhibitConf.createLensEditor = function(lens, lensContainer) {
     });
 
     return editor;
+}
+
+ExhibitConf.startEditData = function() {
+    var EC = ExhibitConf
+
+    , beginEdit = function(){
+        var node = $(this)
+        , original = node.contents()
+
+        //parsing content attribute
+        , content = node.attr('ex:content')
+        , expr = Exhibit.ExpressionParser.parse(content)
+ 
+        //identify item being edited
+        , id = node.parents('[ex\\:itemId]').attr('ex:itemId')
+        , database = EC.win.database
+        , item = database.getItem(id)
+
+        //current value of attribute
+        , results = expr.evaluateOnItem(id, database)
+        , valueString = results.values.toArray().join(';')
+
+        , segment , path
+
+        , doneEdit = function() {
+	    var newString = node.text()
+            , newResults = (newString.indexOf(";") >= 0) ?
+                newString.split(';') : [newString]
+            , newCount = newResults.length
+
+            node.get(0).contentEditable = false;
+            node.off('keyup.exconf')
+                .off('blur.exconf')
+                .removeClass('exhibit-edit-content');
+	    if (newString === valueString) {
+	        node.empty().append(original); //don't bother with edit
+	    }
+	    else {
+	        if (segment.forward) {
+		    database.removeObjects(id, segment.property)
+		    for (var i = 0; i < newCount; i++) {
+		        database.addStatement(id, segment.property, 
+                                              newResults[i]);
+		    }
+	        }
+	        else {
+		    database.removeSubjects(id, segment.property)
+		    for (var i = 0; i < newCount; i++) {
+		        database.addStatement(newResults[i], 
+                                              segment.property, id);
+		    }
+	        }
+	    }
+        };
+
+        if ((id !== null) 
+            && (typeof id !== 'undefined')
+            && expr.isPath() 
+            && ((path = expr.getPath()).getSegmentCount() === 1) 
+            //don't know how to handle multisets, so don't edit
+            && !Array.isArray(segment = path.getSegment(0))) {
+
+            node.on('keyup.exconf', function(e){
+	        if (e.keyCode == 27) {//escape key
+	            node.empty().append(original); //abort edit
+	            node.blur();
+	        }
+            });
+
+            node.get(0).contentEditable=true;
+            node.addClass('exhibit-edit-content')
+                .one('blur.exconf', doneEdit)
+                .focus();
+        };
+    }
+
+    $('body',EC.win.document)
+        .addClass('exhibit-editing-data')
+        .on('click.exconf','[ex\\:content]',beginEdit);
+}
+
+ExhibitConf.stopEditData = function() {
+    $('body',EX.win.document)
+        .removeClass('exhibit-editing-data')
+        .off('click.exconf','[ex\\:content]',beginEdit);
 }
