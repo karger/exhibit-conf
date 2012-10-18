@@ -1,6 +1,6 @@
 /* page editing */
 .exhibit-editing .exhibit-editable:hover {
-  border: 3px solid red;
+  border: 2px solid red;
 }
 
 .exhibit-editing .exhibit-editable:hover .exhibit-editable {
@@ -42,7 +42,7 @@ div.exhibit-toolboxWidget-popup {
 /* data editing */
 
 .exhibit-editing-data [ex\:content]:hover {
-    border: 2px solid rgba(255,255,99,0.5);
+    border: 2px solid red;
 }
 
 .exhibit-editing-data .exhibit-edit-content {

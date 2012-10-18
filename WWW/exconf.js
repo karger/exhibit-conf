@@ -771,7 +771,7 @@ ExhibitConf.exprSelector = function (props) {
         };
 
 
-        EC.startEdit = function() {
+        EC.startEditPage = function() {
             markExhibit();
             //      $(EC.win.document.body)
             //          .wrapInner('<div class="exhibit-wrapper"></div>');
@@ -779,12 +779,11 @@ ExhibitConf.exprSelector = function (props) {
             $('.exhibit-editable').alohaBlock();
             $('#main').aloha();
             $('#exedit-menu').mouseenter(saveRange);
-            EC.rerender();
             $(EC.win.document.body).on('mouseover','.exhibit-editable',
                                        showEditWidget);
         };
 
-        EC.stopEdit = function () {
+        EC.stopEditPage = function () {
             $(EC.win.document.body)
                 .removeClass('exhibit-editing')
                 .off('mouseover','.exhibit-editable',showEditWidget);
@@ -799,6 +798,8 @@ ExhibitConf.exprSelector = function (props) {
         };
     })();
 })();
+
+/* lens editor */
 
 ExhibitConf.createLensEditor = function(lens, lensContainer) {
     //lensContainer should be in exhibit document, to inherit styles etc.
@@ -880,7 +881,7 @@ ExhibitConf.createLensEditor = function(lens, lensContainer) {
         return deferred.promise();
     };
 
-    editor.addNode = function(node, attr) {
+    addNode = function(node, attr) {
         //remember/restore range since interaction w/dialog clears it
         //range = Aloha.getSelection(EC.win).getRangeAt(0), 
         range = EC.win.getSelection().getRangeAt(0),
@@ -892,16 +893,15 @@ ExhibitConf.createLensEditor = function(lens, lensContainer) {
 
     editor.addAnchor = function() {
         var node = $('<a/>').text('new link');
-        editor.addNode(node,'ex:href-content');
+        addNode(node,'ex:href-content');
     };
 
-
     editor.addImg = function() {
-        editor.addNode($('<img/>'),'ex:src-content');
+        addNode($('<img/>'),'ex:src-content');
     };
 
     editor.addText = function() {
-        editor.addNode($('<span/>'),'ex:content');
+        addNode($('<span/>'),'ex:content');
     };
 
     editor.stopEdit = function() {
@@ -1007,7 +1007,7 @@ ExhibitConf.startEditData = function() {
 }
 
 ExhibitConf.stopEditData = function() {
-    $('body',EX.win.document)
+    $('body',ExhibitConf.win.document)
         .removeClass('exhibit-editing-data')
-        .off('click.exconf','[ex\\:content]',beginEdit);
+        .off('click.exconf','[ex\\:content]');
 }

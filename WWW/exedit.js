@@ -115,13 +115,13 @@ ExhibitConf.Editor = {
     EE.editPage = function() {
 	EE.cleanup(function () {
 	    $('.page-insert-menu').hide();
-	    ExhibitConf.stopEdit();
+	    ExhibitConf.stopEditPage();
 	    ExhibitConf.rerender();
 	});
 	$('#main').show();
 	$('.page-insert-menu').show();
 	ExhibitConf.rerender();
-	ExhibitConf.startEdit();
+	ExhibitConf.startEditPage();
     };
     
     EE.lensEditor = {};
@@ -157,6 +157,13 @@ ExhibitConf.Editor = {
     EE.addLensAnchor = function() {
 	EE.lensEditor.addAnchor();
     };
+
+    EE.editData = function() {
+	EE.cleanup(function () {
+	    ExhibitConf.stopEditData();
+	    });
+	ExhibitConf.startEditData();	   
+    }
 
     // replace current contents being edited with a new document
     EE.insertDoc = function(data) {
@@ -228,7 +235,7 @@ ExhibitConf.Editor = {
 		       "edit-exhibit-button": EE.editPage,
 		       "edit-lens-button": EE.editLens,
 		       "edit-links-button": ExhibitConf.configureData,
-		       "edit-data-button": ExhibitConf.startEditData,
+		       "edit-data-button": EE.editData,
 		       "help-button": todo,
 		       "wizard-button": todo,
 		       "simile-button": EE.visitSimile,
