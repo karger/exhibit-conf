@@ -46,10 +46,11 @@ ExhibitConf.exprSelector = function (props) {
     return container;
 };
 
-
+/* page editor */
 (function() {
     var EC = ExhibitConf,
-    nameAttribute, configureSettingSpecs, makeSettingsTable, settingsDialog,
+    nameAttribute, configureSettingSpecs, 
+    makeSettingsTable, settingsDialog,
     markExhibit, findFacet,
     initialized = false;
     settingSpecs = {};
@@ -68,7 +69,6 @@ ExhibitConf.exprSelector = function (props) {
 
 
     //configuring the configurator
-
 
     settingSpecs.views = {
         "TileView": {label: "List", superclassName: "OrderedViewFrame"},
@@ -455,7 +455,7 @@ ExhibitConf.exprSelector = function (props) {
             title: 'Edit View Panel',
             width: 600,
             minWidth: 380,
-            height: 300,
+            height: 400,
             modal: true, 
             buttons: {
                 "Save": save,
@@ -470,6 +470,54 @@ ExhibitConf.exprSelector = function (props) {
         return deferred.promise();
     };
 
+    markExhibit = function(dom) {
+        dom = $(dom || EC.win.document.body);
+        $('[ex\\:role="view"]',dom).addClass('exhibit-editable');
+        $('[ex\\:role="facet"]',dom).addClass('exhibit-editable');
+        $('[ex\\:role="viewPanel"]',dom).addClass('exhibit-editable');
+        //weird things happen if ids get added after rendering
+        //unfortunately, aloha sometimes does that.
+        //preclude by arranging to remove them
+        $('[ex\\:role]',dom).filter(':not([id])').addClass('exconf-no-id');
+    };
+
+    unMarkExhibit = function(dom) {
+        dom = $(dom || EC.win.document.body);
+        $('[ex\\:role="view"]',dom).removeClass('exhibit-editable');
+        $('[ex\\:role="facet"]',dom).removeClass('exhibit-editable');
+        $('[ex\\:role="viewPanel"]',dom).removeClass('exhibit-editable');
+    };
+
+    EC.unrender = function(dom) {
+        dom = $(dom || EC.win.document);
+        dom.find('.exhibit-controlPanel').remove();
+        dom.find('.exhibit-toolboxWidget-popup').remove();
+        dom.find('[ex\\:role="facet"]').empty().removeClass('exhibit-facet');
+        dom.find('[ex\\:role="view"]')
+            .removeClass('exhibit-view')
+            .children()
+            .not('[ex\\:role]')
+            .remove();
+        dom.find('[ex\\:role="viewPanel"]')
+            .children()
+            .not('[ex\\:role]')
+            .remove();
+        dom.find('.exconf-no-id').removeAttr('id');
+    };
+
+    EC.rerender = function(win) {
+        win = win || EC.win;
+        EC.unrender(win.document);
+        if (win.Exhibit && win.Exhibit.History.enabled)
+            win.Exhibit.History.eraseState();
+        if (win.exhibit._uiContext) {
+            //sledgehammer to clear old state
+            win.exhibit._uiContext = 
+                Exhibit.UIContext.createRootContext({},win.exhibit); 
+        }
+        win.exhibit._collectionMap = {};
+        win.exhibit.configureFromDOM();
+    };
 
     EC.reinit = function(win) {
         var killFacets = function(w) {
@@ -495,151 +543,6 @@ ExhibitConf.exprSelector = function (props) {
             win.exhibit.configureFromDOM();
         });
         win.database.loadLinks()
-    };
-
-    EC.dataMimeTypes = [];
-    EC.configureData = function() {
-        var selectMimes = function() {
-            var importers=Exhibit.Importer._registry.getKeys(
-                Exhibit.Importer._registryKey)
-            , options=$('<select></select>')
-            , i;
-
-            for (i=0; i<importers.length; i++) {
-                $('<option/>').text(importers[i]).appendTo(options);
-            }
-            return options;
-        }
-        , init = function() {
-            if (EC.dataMimeTypes.length > 0) {
-                return;
-            }
-            EC.dataMimeTypes=selectMimes();
-
-            EC.dataDialog = $('<div><table class="linkFields"></table></div>')
-            EC.dataDialog.dialog({
-                title: 'Edit Data Links',
-                autoOpen: false,
-                width: 600,
-                minWidth: 380,
-                height: 300,
-                modal: true, 
-                buttons: {
-                    "Save": saveLinks,
-                    "Cancel": function() { 
-                        $(this).dialog('close');
-                    },
-                },
-                "zIndex": 10101 //cover aloha toolbar
-            });
-        }
-
-        , saveLinks = function() {
-            $("link[rel=exhibit-data]").remove();
-            $('.linkFields',this).find("tr").slice(0,-1).each(function() {
-                var parts=$(this).find("td");
-                var href=parts.eq(0).children().val().trim();
-                var type=parts.eq(1).children().val();
-                if (href) {
-                    $('<link rel="exhibit-data">')
-                        .attr('href',href)
-                        .attr('type',type)
-                        .appendTo('head');
-                }
-            });
-            $(this).dialog('close');
-            EC.reinit();
-        }
-
-        , editLinks = function() {
-            init();
-            var linkFields=$('.linkFields',EC.dataDialog)
-            , killMe=function() {
-                $(this).parent().parent().remove();
-            }
-            , button=$('<input type="button">').val("remove")
-                .click(killMe).wrap("<td></td>").parent()
-            , addBlankLine = function() {
-                var field = $('<input type="textfield" value="">');
-                var unBlank = function () {
-                    field.parent().parent().append(button.clone(true));
-                    addBlankLine();
-                    field.unbind('keydown',unBlank);
-                }
-                field.keydown(unBlank);
-                field.wrap("<td>").parent().wrap("<tr>").parent()
-                    .append(EC.dataMimeTypes.clone()
-                            .val("application/json")
-                            .wrap("<td>").parent())
-                    .appendTo(linkFields);
-            };
-
-            linkFields.empty();
-            $('link[rel="exhibit-data"]')
-                .each(function() {
-                    var val= $('<input type="textfield"></input>')
-                        .val($(this).attr('href'))
-                        .wrap("<td>").parent().wrap("<tr>").parent()
-                        .append(
-                            EC.dataMimeTypes.clone()
-                                .val($(this).attr("type"))
-                                .wrap("<td>").parent())
-                        .append(button.clone(true));
-                    linkFields.append(val);
-                });
-            addBlankLine();
-            EC.dataDialog.dialog('open');
-        }
-
-        editLinks();
-    };
-
-    EC.unrender = function(dom) {
-        dom = $(dom || EC.win.document);
-        dom.find('.exhibit-controlPanel').remove();
-        dom.find('.exhibit-toolboxWidget-popup').remove();
-        dom.find('[ex\\:role="facet"]').empty().removeClass('exhibit-facet');
-        dom.find('[ex\\:role="view"]')
-            .removeClass('exhibit-view')
-            .children()
-            .not('[ex\\:role]')
-            .remove();
-        dom.find('[ex\\:role="viewPanel"]')
-            .children()
-            .not('[ex\\:role]')
-            .remove();
-        dom.find('.exconf-no-id').removeAttr('id');
-    };
-
-    markExhibit = function(dom) {
-        dom = $(dom || EC.win.document.body);
-        $('[ex\\:role="view"]',dom).addClass('exhibit-editable');
-        $('[ex\\:role="facet"]',dom).addClass('exhibit-editable');
-        $('[ex\\:role="viewPanel"]',dom).addClass('exhibit-editable');
-        //weird things happen if ids get added after rendering
-        //unfortunately, aloha sometimes does that.
-        //preclude by arranging to remove them
-        $('[ex\\:role]',dom).filter(':not([id])').addClass('exconf-no-id');
-    };
-
-    unMarkExhibit = function(dom) {
-        dom = $(dom || EC.win.document.body);
-        $('[ex\\:role="view"]',dom).removeClass('exhibit-editable');
-        $('[ex\\:role="facet"]',dom).removeClass('exhibit-editable');
-    };
-
-    EC.rerender = function(win) {
-        win = win || EC.win;
-        EC.unrender(win.document);
-        if (win.Exhibit && win.Exhibit.History.enabled)
-            win.Exhibit.History.eraseState();
-        if (win.exhibit._uiContext) {
-            //sledgehammer to clear old state
-            win.exhibit._uiContext = 
-                Exhibit.UIContext.createRootContext({},win.exhibit); 
-        }
-        win.exhibit._collectionMap = {};
-        win.exhibit.configureFromDOM();
     };
 
     findFacet = function (elt,win) {
@@ -716,43 +619,53 @@ ExhibitConf.exprSelector = function (props) {
 
         var handleEditClick = function(event) {
             var widget = $(event.target).parents('.exhibit-edit-tab')
-            , f
             , elt = widget.parent();
 
             widget.detach();
+            //click causes event to trigger twice; not sure why.
+            event.stopImmediatePropagation();
             EC.configureElement(elt).done(function () {
+                var f;
                 if (EC.win.Exhibit.getRoleAttribute(elt) === 'facet') {
                     f = findFacet(elt);
-                    f.dispose();
+                    if (f) f.dispose();
                 }
-                EC.rerender()}
-                                         );
+                EC.rerender()
+            });
         }
         , handleDeleteClick = function(event) {
             var widget = $(event.target).parents('.exhibit-edit-tab')
             , elt = widget.parent();
 
+            event.stopImmediatePropagation();
             widget.detach();
             elt.mahaloBlock();
             elt.detach();
             EC.rerender();
         }
-        , editButton = $('<button>Edit</button>').click(handleEditClick)
+        , editButton = $('<button>Edit</button>')
         , deleteButton =  $('<button>Delete</button>')
-              .click(handleDeleteClick)
         , editWidget = $('<div class="exhibit-edit-tab"/>')
             .append(editButton)
             .append(deleteButton)
         
-        , showEditWidget = function () {
+        , showEditWidget = function (e) {
             //quick hack: set parent css so edit button absolute positioning
             //is relative to parent
-            var role = Exhibit.getRoleAttribute(this);
+
+            //don't rely on bubbling, because I'd have to stop
+            //propagation which could break other mouseovers
+            var parents = $(e.target).parents('.exhibit-editable')
+            , realTarget = parents.length > 0 ?
+                parents.eq(0) : $(e.target)
+            , role = Exhibit.getRoleAttribute(realTarget.get(0));
             editWidget.detach();
+            //need to raeattach events because aloha is removing them
+            editButton.on('click.exconf',handleEditClick);
+            deleteButton.on('click.exconf',handleDeleteClick);
             editButton.text('Edit ' + role);
             deleteButton.text('Delete ' + role);
-            $(this).css('position','relative').prepend(editWidget);
-            return false; //stop propagation
+            $(realTarget).css('position','relative').prepend(editWidget);
         }
         , saveRange = function() {
             /* having some bizarre problems saving ranges
@@ -770,6 +683,7 @@ ExhibitConf.exprSelector = function (props) {
             }
         };
 
+        editWidget.children().wrap('<div/>');
 
         EC.startEditPage = function() {
             markExhibit();
@@ -777,7 +691,15 @@ ExhibitConf.exprSelector = function (props) {
             //          .wrapInner('<div class="exhibit-wrapper"></div>');
             $(EC.win.document.body).addClass('exhibit-editing');
             $('.exhibit-editable').alohaBlock();
+            $('.exhibit-editable')
+                .after('<div class="exconf-whitespace">&nbsp;</div>')
+                .before('<div class="exconf-whitespace">&nbsp;</div>');
             $('#main').aloha();
+            //alohaBlock "cleans up" html and destroys events bound to it
+            //so necessary to rerender after alohaBlock calls
+            //better plan: alohaBlock once before editing begins
+            //so rerendering doesn't happen here
+            EC.rerender();
             $('#exedit-menu').mouseenter(saveRange);
             $(EC.win.document.body).on('mouseover','.exhibit-editable',
                                        showEditWidget);
@@ -787,19 +709,127 @@ ExhibitConf.exprSelector = function (props) {
             $(EC.win.document.body)
                 .removeClass('exhibit-editing')
                 .off('mouseover','.exhibit-editable',showEditWidget);
-            deleteButton.off('click',handleDeleteClick);
-            editButton.off('click',handleEditClick); //remove since re-add
+            deleteButton.off('click.exconf');
+            editButton.off('click.exconf'); //remove since re-add
             $('#main').mahalo();
             $('#exedit-menu').off('mouseenter',saveRange);
             $('.exhibit-editable').mahaloBlock();
-            $('.exhibit-wrapper').children().unwrap();
+            $('.exconf-whitespace').each(function() {
+                var jq = $(this);
+                if (jq.text() === '&nbsp;') {
+                    jq.remove();
+                }
+                else {
+                    jq.contents().unwrap();
+                }
+            });
+            //            $('.exhibit-wrapper').children().unwrap();
             unMarkExhibit();
-            EC.rerender(EC.win);
+            EC.rerender();
         };
     })();
 })();
 
-/* lens editor */
+/* Data Link Editor */
+ExhibitConf.dataMimeTypes = [];
+ExhibitConf.editDataLinks = function() {
+    var EC = ExhibitConf
+    , selectMimes = function() {
+        var importers=Exhibit.Importer._registry.getKeys(
+            Exhibit.Importer._registryKey)
+        , options=$('<select></select>')
+        , i;
+
+        for (i=0; i<importers.length; i++) {
+            $('<option/>').text(importers[i]).appendTo(options);
+        }
+        return options;
+    }
+    , init = function() {
+        if (EC.dataMimeTypes.length > 0) {
+            return;
+        }
+        EC.dataMimeTypes=selectMimes();
+
+        EC.dataDialog = $('<div><table class="linkFields"></table></div>')
+        EC.dataDialog.dialog({
+            title: 'Edit Data Links',
+            autoOpen: false,
+            width: 600,
+            minWidth: 380,
+            height: 300,
+            modal: true, 
+            buttons: {
+                "Save": saveLinks,
+                "Cancel": function() { 
+                    $(this).dialog('close');
+                },
+            },
+            "zIndex": 10101 //cover aloha toolbar
+        });
+    }
+
+    , saveLinks = function() {
+        $("link[rel=exhibit-data]").remove();
+        $('.linkFields',this).find("tr").slice(0,-1).each(function() {
+            var parts=$(this).find("td");
+            var href=parts.eq(0).children().val().trim();
+            var type=parts.eq(1).children().val();
+            if (href) {
+                $('<link rel="exhibit-data">')
+                    .attr('href',href)
+                    .attr('type',type)
+                    .appendTo('head');
+            }
+        });
+        $(this).dialog('close');
+        EC.reinit();
+    }
+
+    , editLinks = function() {
+        var linkFields=$('.linkFields',EC.dataDialog)
+        , killMe=function() {
+            $(this).parent().parent().remove();
+        }
+        , button=$('<input type="button">').val("remove")
+            .click(killMe).wrap("<td></td>").parent()
+        , addBlankLine = function() {
+            var field = $('<input type="textfield" value="">');
+            var unBlank = function () {
+                field.parent().parent().append(button.clone(true));
+                addBlankLine();
+                field.unbind('keydown',unBlank);
+            }
+            field.keydown(unBlank);
+            field.wrap("<td>").parent().wrap("<tr>").parent()
+                .append(EC.dataMimeTypes.clone()
+                        .val("application/json")
+                        .wrap("<td>").parent())
+                .appendTo(linkFields);
+        };
+
+        linkFields.empty();
+        $('link[rel="exhibit-data"]')
+            .each(function() {
+                var val= $('<input type="textfield"></input>')
+                    .val($(this).attr('href'))
+                    .wrap("<td>").parent().wrap("<tr>").parent()
+                    .append(
+                        EC.dataMimeTypes.clone()
+                            .val($(this).attr("type"))
+                            .wrap("<td>").parent())
+                    .append(button.clone(true));
+                linkFields.append(val);
+            });
+        addBlankLine();
+        EC.dataDialog.dialog('open');
+    }
+
+    init();
+    editLinks();
+};
+
+/* Lens Editor */
 
 ExhibitConf.createLensEditor = function(lens, lensContainer) {
     //lensContainer should be in exhibit document, to inherit styles etc.
@@ -937,11 +967,10 @@ ExhibitConf.startEditData = function() {
         //parsing content attribute
         , content = node.attr('ex:content')
         , expr = Exhibit.ExpressionParser.parse(content)
- 
+        
         //identify item being edited
         , id = node.parents('[ex\\:itemId]').attr('ex:itemId')
         , database = EC.win.database
-        , item = database.getItem(id)
 
         //current value of attribute
         , results = expr.evaluateOnItem(id, database)
@@ -950,7 +979,7 @@ ExhibitConf.startEditData = function() {
         , segment , path
 
         , doneEdit = function() {
-	    var newString = node.text()
+            var newString = node.text()
             , newResults = (newString.indexOf(";") >= 0) ?
                 newString.split(';') : [newString]
             , newCount = newResults.length
@@ -959,25 +988,26 @@ ExhibitConf.startEditData = function() {
             node.off('keyup.exconf')
                 .off('blur.exconf')
                 .removeClass('exhibit-edit-content');
-	    if (newString === valueString) {
-	        node.empty().append(original); //don't bother with edit
-	    }
-	    else {
-	        if (segment.forward) {
-		    database.removeObjects(id, segment.property)
-		    for (var i = 0; i < newCount; i++) {
-		        database.addStatement(id, segment.property, 
+            if (newString === valueString) {
+                node.empty().append(original); //don't bother with edit
+            }
+            else {
+                if (segment.forward) {
+                    database.removeObjects(id, segment.property)
+                    for (var i = 0; i < newCount; i++) {
+                        database.addStatement(id, segment.property, 
                                               newResults[i]);
-		    }
-	        }
-	        else {
-		    database.removeSubjects(id, segment.property)
-		    for (var i = 0; i < newCount; i++) {
-		        database.addStatement(newResults[i], 
+                    }
+                }
+                else {
+                    database.removeSubjects(id, segment.property)
+                    for (var i = 0; i < newCount; i++) {
+                        database.addStatement(newResults[i], 
                                               segment.property, id);
-		    }
-	        }
-	    }
+                    }
+                }
+            }
+            ExhibitConf.rerender();
         };
 
         if ((id !== null) 
@@ -988,10 +1018,10 @@ ExhibitConf.startEditData = function() {
             && !Array.isArray(segment = path.getSegment(0))) {
 
             node.on('keyup.exconf', function(e){
-	        if (e.keyCode == 27) {//escape key
-	            node.empty().append(original); //abort edit
-	            node.blur();
-	        }
+                if (e.keyCode == 27) {//escape key
+                    node.empty().append(original); //abort edit
+                    node.blur();
+                }
             });
 
             node.get(0).contentEditable=true;

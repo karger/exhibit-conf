@@ -4,14 +4,16 @@
     <meta charset="UTF-8">    
     <title>New Exhibit</title>
     <link href="nobelists.js" type="application/json" rel="exhibit-data" />
-    <script src="http://people.csail.mit.edu/karger/Exhibit3/api/exhibit-api.js?autoCreate=true&amp;bundle=false"
+    <script src="http://people.csail.mit.edu/karger/Exhibit3/api/exhibit-api.js?autoCreate=true"
 	    type="text/javascript"></script>
     <link rel="exhibit-extension" href="http://people.csail.mit.edu/karger/Exhibit3/api/extensions/time/time-extension.js"></script>
   </head>
   <body>
     <div id="main">
       <h1>New Exhibit</h1>
-      This is an empty exhibit.  You can use this as a starting point to create your own. 
+      This is an empty exhibit.  You can use this as a starting point
+      to create your own.  Select the tutorial in the Help menu if you
+      want more information.
       <div ex:role="lens">
 	<span ex:content=".label"></span>
       </div>
@@ -30,10 +32,9 @@
 	      </div>
 	    </div>
 	  </td>
-	  <td class="facet-panel" style="vertical-align: top">
-	    <div id="facet-container" style="max-width: 300px;min-width:200px" >
+	  <td class="facet-panel"  
+	      style="width:250px;vertical-align: top">
 	      <div ex:role="facet" ex:expression=".nobel-year"></div>
-	    </div>
 	  </td>
 	</tr>
       </table>

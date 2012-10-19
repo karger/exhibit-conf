@@ -45,7 +45,10 @@ ExhibitConf.Editor = {
 	    range.insertNode(component.get(0));
 	}
 	config = ExhibitConf.configureElement(component);
-	config.done(function () {ExhibitConf.rerender()});
+	config.done(function () {
+                component.alohaBlock();
+                ExhibitConf.rerender();
+                    });
 	config.fail(function() {
 	    component.remove();
 	});
@@ -96,8 +99,8 @@ ExhibitConf.Editor = {
     };
 
     EE.stopEdit = function() {
-	EE.cleanup();
 	$('#main').show();
+	EE.cleanup();
     };
 
     EE.preview = function() {
@@ -128,17 +131,19 @@ ExhibitConf.Editor = {
     EE.editLens = function() {
 	var lens = $('[ex\\:role="lens"]',EC.win.document),
 	editContainer = EE.lensEditorTemplate.clone()
-            .prependTo(EC.win.document.body).show(),
-	lensContainer = $('.lens-editor-lens-container',editContainer);
-
-	EE.lensEditor = ExhibitConf.createLensEditor(lens, lensContainer);
+	, lensContainer = $('.lens-editor-lens-container',editContainer);
 
 	EE.cleanup(function () {
 	    $('.lens-insert-menu').hide();
+            $('#main').show();
 	    EE.lensEditor.stopEdit();
 	    editContainer.remove();
 	    ExhibitConf.rerender();
 	});
+
+        editContainer.prependTo(EC.win.document.body).show(),
+	EE.lensEditor = ExhibitConf.createLensEditor(lens, lensContainer);
+
 	if (lens.length === 0) {
 	    lens = $('<div ex\:role="lens"></div>');
 	}
@@ -200,14 +205,18 @@ ExhibitConf.Editor = {
 	EE.openUrl("blank.html");
     };
 
+    EE.tutorial = function() {
+        window.open("http://people.csail.mit.edu/karger/EConf/exedit.html?page=tutorial.html");
+    };
+
     EE.beginEdit = function(data) {
 	EE.insertDoc(data);
 	EE.activate();
 	ExhibitConf.reinit();
-    }
+    };
 
     EE.init = function() {
-	EE.menu = $('#exedit-menu').detach();
+	EE.menu = $('#exedit-menu').detach().show();
 	EE.lensTemplate = $('#lens-template').detach()
 	    .removeAttr('id').show().children();
 	EE.lensEditorTemplate = $('#lens-editor-template').detach()
@@ -217,8 +226,8 @@ ExhibitConf.Editor = {
 	EE.headStuff = $('.exedit',document.head)
 	    .add('link[rel=stylesheet]'); //to get exhibit styles
 	EE.headStuff.addClass('exedit');
-	ExhibitConf.win = window;
 	$('head').empty().append('<title>Exedit</title>');
+	ExhibitConf.win = window;
     };
     
     EE.visitSimile = function() {
@@ -234,9 +243,10 @@ ExhibitConf.Editor = {
 		       "preview-button": EE.stopEdit,
 		       "edit-exhibit-button": EE.editPage,
 		       "edit-lens-button": EE.editLens,
-		       "edit-links-button": ExhibitConf.configureData,
+		       "edit-links-button": ExhibitConf.editDataLinks,
 		       "edit-data-button": EE.editData,
 		       "help-button": todo,
+		       "tutorial-button": EE.tutorial,
 		       "wizard-button": todo,
 		       "simile-button": EE.visitSimile,
 		       "add-view-button": EE.addView,
@@ -301,5 +311,8 @@ ExhibitConf.Editor = {
 		    EE.activate();
 		    ExhibitConf.reinit();
 		})
+            .fail(function() {
+                alert("Failed to load " + (urlArgs.page || "blank.html"))
+                })
 	    });
 })();

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">    
+    <title>New Exhibit</title>
+    <link href="nobelists.js" type="application/json" rel="exhibit-data" />
+    <script src="http://people.csail.mit.edu/karger/Exhibit3/api/exhibit-api.js?autoCreate=true"
+	    type="text/javascript"></script>
+    <link rel="exhibit-extension" href="http://people.csail.mit.edu/karger/Exhibit3/api/extensions/time/time-extension.js"></script>
+  </head>
+  <body>
+    <div id="main">
+      <h1>Exhibit Tutorial</h1> 
+ 
+<p>This is an editing tool for <b>Exhibits</b>.  Exhibits are
+pages that present a collections of items, with interactive elements
+such as facets for sorting and filtering the collection, and multiple
+types of visualizations such as lists, thumbnail grids, and timelines.
+
+<p>There are three important parts of an exhibit.  <b>Views</b>
+present collections of items.  <b>Facets</b> are widgets that
+filter the collection of items presented in a view.
+And <b>Lenses</b> are templates that describe how individual
+items should be presentedemdash;which properties of the item should
+be shown, with what layout and formatting.  There's one more common
+optional element: a <b>view panel</b> that can hold multiple
+view among which the reader can switch to see one at a time.
+
+<p>As an example, this page shows a collection of MIT nobel prize
+winners.  You are looking at a view panel that offers two views; the
+currently-presented <b>Tile</b> view that lists items vertically
+and a <b>Thumbnail</b> that lays out items in a grid (often used
+for photographs).  You can switch between views by clicking on the
+view titles above the view.
+
+<p>On the right side is a <b>list facet</b> for filtering the winners
+according to their year of winning.  You can use this facet to select
+multiple values, and the view will update accordingly.
+
+<p>Each nobelist is presented using a <b>lens</b> that lays out
+certain properties: the nobelists' name, their discipline and year of
+winning, and a photograph.
+
+<p>Below the visualization, you will find instructions on how to edit
+the exhibit.  You can also just select File&gt;New to discard this
+tutorial exhibit and start with a blank slate.
+
+      <div ex:role="lens">
+            <table class="nobelist"><tr>
+                <td><img ex:src-content=".imageURL" /></td>
+                <td>
+                  <div ex:content=".label" class="name"></div>
+                  <div>
+                    <span ex:content=".discipline"
+                    class="discipline"></span>, 
+                    <i ex:content=".nobel-year"></i>
+                  </div>
+                  <div ex:if-exists=".co-winner" class="co-winners">
+                    Co-winners: <span ex:content=".co-winner"></span>
+                  </div>
+                  <div ex:content=".relationship-detail"
+                  class="relationship"></div>
+                </td>
+            </tr></table>
+      </div>
+      <table style="width:100%">
+	<tr>
+	  <td>
+	    <div class="main-panel" ex:role="viewPanel"
+	    style="min-width: 400px">
+	      <div ex:role="view" ex:viewclass="Tile"></div>
+	      <div ex:role="view"
+		   ex:viewClass="Thumbnail"
+		   ex:showAll="true"
+		   ex:orders=".discipline"
+		   ex:possibleOrders=".label, .last-name, .discipline,
+				      .relationship, .shared, .deceased, .nobel-year">
+	      </div>
+	    </div>
+	  </td>
+	  <td class="facet-panel"  
+	      style="max-width: 300px;min-width:200px;vertical-align: top">
+	      <div ex:role="facet" ex:expression=".nobel-year"></div>
+	  </td>
+	</tr>
+      </table>
+
+<h2>Editing the Exhibit</h2>
+<p>You can edit everything you see, using the menu bar you see above.
+  As a simplest example, you can edit this text: just select
+  Edit&gt;Page in the menu.  Then you can click anywhere in this text
+  and type.  Clicking will also cause a floating menu to appear; you
+  can use this to insert images and links, or to select and change
+  text formatting.
+
+<p>If, while editing the page, you hover over one of the the exhibit
+  elements (views or facets), it will highlight, and two buttons
+  will appear in the top right to let you edit or delete that element.
+  Clicking the edit button will open a dialog box that lets you change
+  the widget's configuration.  You can use the editor to change the
+  type of view or facet&mdash;for example, you can switch the
+  nobel-year facet to a "Cloud" facet that displays the values
+  differently.  Delete does the obvious thing.
+
+<p>If instead of editing you want to insert a brand new widget, click
+  your cursor on the page to select the spot where you want to insert
+  it, then use the Insert menu item at the top.  To insert an
+  additional view in the view panel, click the view panel's edit
+  button; it will let you add a view.
+
+<p>Besides editing the widgets, you can edit the way an individual
+  item is presented.  If you select Edit&gt;Lenses, a small box will
+  appear containing the template.  You edit it the same way you edit
+  the page; a preview of how items will look appears directly below.
+
+<p>Besides editing the static "boilerplate" of the lens, an important
+  step in editing lenses is adding placeholders for content from the
+  individual items being displayed.  You do so using the Insert menu
+  while the lens editor is active.  You will have the option of
+  inserting text (a text content placeholder that is filled in by a
+  property you specify from the data), an image (you specify a
+  property holding an image url) or a link (you specify a property
+  holding a url that will become the anchor of the link).
+
+<p>In addition to editing the visualization, you can edit the data
+  being visualized.  Exhibit fetches its data according to a url
+  specified in the page; Click Edit&gt;Data Links to select a
+  different url for the data source.
+
+<p>Once you are satisfied with the presentation, you can save it.  Use
+  File&gt;Save As to download a copy of the Exhibit you created.  You
+  can save this html document anywhere; opening it in a web browser
+  will activate the interactive exhibit.  Note that due to browser
+  security restrictions, the name of the downloaded URL will be
+  gibberish; you'll need to pick a reasonable name.  
+
+<p>You can also edit the data you see.  Click Edit&gt;Data and the
+  data you see will become editable: click on the data item and you
+  can change it by typing over it.  Right now this editing is for
+  demonstration only; there is no mechanism provided to save the data
+  you have edited.
+    </div>
+  </body>
+</html>
