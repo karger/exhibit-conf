@@ -1,6 +1,90 @@
 //Configuration of editor
 ExhibitConf = {ranges: []};
 
+/*Utility functions */
+(function () {
+    var EC = ExhibitConf;
+
+    EC.unrender = function(dom) {
+        dom = $(dom || EC.win.document);
+        dom.find('.exhibit-controlPanel').remove();
+        dom.find('.exhibit-toolboxWidget-popup').remove();
+        dom.find('[ex\\:role="facet"]').empty().removeClass('exhibit-facet');
+        dom.find('[ex\\:role="view"]')
+            .removeClass('exhibit-view')
+            .children()
+            .not('[ex\\:role]')
+            .remove();
+        dom.find('[ex\\:role="viewPanel"]')
+            .children()
+            .not('[ex\\:role]')
+            .remove();
+        dom.find('.exconf-no-id').removeAttr('id');
+    };
+
+    EC.rerender = function(win) {
+        win = win || EC.win;
+        EC.unrender(win.document);
+        if (win.Exhibit && win.Exhibit.History.enabled)
+            win.Exhibit.History.eraseState();
+        if (win.exhibit._uiContext) {
+            //sledgehammer to clear old state
+            win.exhibit._uiContext = 
+                Exhibit.UIContext.createRootContext({},win.exhibit); 
+        }
+        win.exhibit._collectionMap = {};
+        win.exhibit.configureFromDOM();
+    };
+
+    EC.reinit = function(win) {
+        var killFacets = function(w) {
+            var i
+            , facets = w && w.exhibit && w.exhibit.getUIContext
+                && w.exhibit.getUIContext().getCollection()._facets;
+            
+            if (facets) {
+                for (i=0; i<facets.length; i++) {
+                    facets[i].dispose();
+                }
+            }
+        };
+
+        win = win || EC.win;
+        killFacets(win);
+        EC.unrender(win.document);
+        if (win.Exhibit.History.enabled)
+            win.Exhibit.History.eraseState();
+        $(document).one('dataload.exhibit',function() {
+            //need to set proper 'this" on configure call
+            //so can't just pass configureFromDOM to loadLinks
+            win.exhibit.configureFromDOM();
+        });
+        win.database.loadLinks()
+    };
+
+    EC.open = function() {
+        var deferred = $.Deferred(),
+        input = $('<input type="file"></input>');
+
+        input.change(function(evt) {
+            var file = evt.target.files[0],
+            reader = new FileReader();
+            reader.onload = function() {
+                deferred.resolve(reader.result);
+            };
+            reader.readAsText(file);
+        });
+        input.click();
+        return deferred.promise();
+    };
+
+    EC.saveHtml = function(html) {
+        uri = "data:application/octet-stream;charset=utf-8,"
+            + encodeURIComponent('<html>'+html+'</html>');
+        window.open(uri,"_blank");
+    };
+})();
+
 ExhibitConf.exprSelector = function (props) {
     var
     selector = $('<select></select>')
@@ -46,74 +130,56 @@ ExhibitConf.exprSelector = function (props) {
     return container;
 };
 
-/* page editor */
-(function() {
-    var EC = ExhibitConf,
-    nameAttribute, configureSettingSpecs, 
-    makeSettingsTable, settingsDialog,
-    markExhibit, findFacet,
-    initialized = false;
-    settingSpecs = {};
-
-    nameAttribute = function(elmt, name) {
-        elmt = $(elmt);
-
-        if (elmt.attr(name) !== undefined) {
-            return name;
-        } else if (elmt.attr("data-ex-" + name)) {
-            return "data-ex-" + name;
-        } else {
-            return "ex:" + name;
-        } 
-    };
-
-
-    //configuring the configurator
-
-    settingSpecs.views = {
-        "TileView": {label: "List", superclassName: "OrderedViewFrame"},
-        "ThumbnailView": {superclassName: "OrderedViewFrame"},
-        "TimelineView": {
-            specs: {
-                "start": {type: "expr"},
-                "end": {type: "expr"},
-                "colorKey": {type: "expr"},
-                "iconKey": {type: "expr"},
-                "eventLabel": {type: "expr"},
-                "caption": {type: "text"}
+/* Widget configurator */
+(function () {
+    var EC = ExhibitConf
+    , initialized = false
+    , settingSpecs = {
+        
+        views: {
+            "TileView": {label: "List", 
+                         superclassName: "OrderedViewFrame",
+                         specs: {
+                             orders: "text",
+                             possibleOrders: "text"
+                             }
+                        },
+            "ThumbnailView": {superclassName: "OrderedViewFrame"},
+            "TimelineView": {
+                specs: {
+                    "start": {type: "expr"},
+                    "end": {type: "expr"},
+                    "colorKey": {type: "expr"},
+                    "iconKey": {type: "expr"},
+                    "eventLabel": {type: "expr"},
+                    "caption": {type: "text"}
+                }
             }
+        },
+
+        facets: {
+            "ListFacet": {label: "List",
+                          specs: {"expression": {type: "expr", 
+                                                 defaultValue: ""}}},
+            "CloudFacet": {label: "Tag Cloud",
+                           specs: {"expression": {type: "expr", 
+                                                  defaultValue: ""}}},
+            "NumericRangeFacet": {label: "Numeric Range",
+                                  specs: {"expression": {type: "expr", 
+                                                         defaultValue: ""}}},
+            "HierarchicalFacet": {label: "Hierarchical List",
+                                  specs: {"expression": {type: "expr", 
+                                                         defaultValue: ""}}},
+            "TextSearchFacet": {label: "Text Search", 
+                                specs: {"expressions": {type: "expr", 
+                                                        defaultValue: ""}}},
+            "AlphaRangeFacet": {label: "Alphabetical Range",
+                                specs: {"expression": {type: "expr", 
+                                                       defaultValue: ""}}}
         }
-    };
+    }
 
-    settingSpecs.facets = {
-        "ListFacet": {label: "List",
-                      specs: {"expression": {type: "expr", defaultValue: ""}}},
-        "CloudFacet": {label: "Tag Cloud",
-                       specs: {"expression": {type: "expr", defaultValue: ""}}},
-        "NumericRangeFacet": {label: "Numeric Range",
-                              specs: {"expression": {type: "expr", 
-                                                     defaultValue: ""}}},
-        "HierarchicalFacet": {label: "Hierarchical List",
-                              specs: {"expression": {type: "expr", 
-                                                     defaultValue: ""}}},
-        "TextSearchFacet": {label: "Text Search", 
-                            specs: {"expressions": {type: "expr", 
-                                                    defaultValue: ""}}},
-        "AlphaRangeFacet": {label: "Alphabetical Range",
-                            specs: {"expression": {type: "expr", 
-                                                   defaultValue: ""}}}
-
-    };
-
-    settingSpecs.viewPanel = {
-        "viewPanel": {label: "View Panel",
-                      specs: {initialView: {type: "int",
-                                            defaultValue: 0}}
-                     }
-    };
-
-
-    configureSettingSpecs = function() {
+    , configureSettingSpecs = function() {
 
         var className,
 
@@ -154,9 +220,21 @@ ExhibitConf.exprSelector = function (props) {
                              EC.win.Exhibit.UI.facetClassNameToFacetClass);
             }
         }
-    };
+    }
 
-    makeSettingsTable = function(specs, settings) {
+    , nameAttribute = function(elmt, name) {
+        elmt = $(elmt);
+
+        if (elmt.attr(name) !== undefined) {
+            return name;
+        } else if (elmt.attr("data-ex-" + name)) {
+            return "data-ex-" + name;
+        } else {
+            return "ex:" + name;
+        } 
+    }
+
+    , makeSettingsTable = function(specs, settings) {
 
         var field,
         table = $('<table></table>'),
@@ -251,10 +329,10 @@ ExhibitConf.exprSelector = function (props) {
         }
 
         return table;
-    };
+    }
 
     //create a dialog that destructively modifies exhibit component settings
-    settingsDialog = function(comp, title, settings) {
+    , settingsDialog = function(comp, title, settings) {
         var className,
         deferred = $.Deferred(),
         //dummy tab is a hack due to tabs oddness: select event is not called
@@ -469,83 +547,13 @@ ExhibitConf.exprSelector = function (props) {
 
         return deferred.promise();
     };
+})();
 
-    markExhibit = function(dom) {
-        dom = $(dom || EC.win.document.body);
-        $('[ex\\:role="view"]',dom).addClass('exhibit-editable');
-        $('[ex\\:role="facet"]',dom).addClass('exhibit-editable');
-        $('[ex\\:role="viewPanel"]',dom).addClass('exhibit-editable');
-        //weird things happen if ids get added after rendering
-        //unfortunately, aloha sometimes does that.
-        //preclude by arranging to remove them
-        $('[ex\\:role]',dom).filter(':not([id])').addClass('exconf-no-id');
-    };
+/* page editor */
+(function () {
+    var EC = ExhibitConf
 
-    unMarkExhibit = function(dom) {
-        dom = $(dom || EC.win.document.body);
-        $('[ex\\:role="view"]',dom).removeClass('exhibit-editable');
-        $('[ex\\:role="facet"]',dom).removeClass('exhibit-editable');
-        $('[ex\\:role="viewPanel"]',dom).removeClass('exhibit-editable');
-    };
-
-    EC.unrender = function(dom) {
-        dom = $(dom || EC.win.document);
-        dom.find('.exhibit-controlPanel').remove();
-        dom.find('.exhibit-toolboxWidget-popup').remove();
-        dom.find('[ex\\:role="facet"]').empty().removeClass('exhibit-facet');
-        dom.find('[ex\\:role="view"]')
-            .removeClass('exhibit-view')
-            .children()
-            .not('[ex\\:role]')
-            .remove();
-        dom.find('[ex\\:role="viewPanel"]')
-            .children()
-            .not('[ex\\:role]')
-            .remove();
-        dom.find('.exconf-no-id').removeAttr('id');
-    };
-
-    EC.rerender = function(win) {
-        win = win || EC.win;
-        EC.unrender(win.document);
-        if (win.Exhibit && win.Exhibit.History.enabled)
-            win.Exhibit.History.eraseState();
-        if (win.exhibit._uiContext) {
-            //sledgehammer to clear old state
-            win.exhibit._uiContext = 
-                Exhibit.UIContext.createRootContext({},win.exhibit); 
-        }
-        win.exhibit._collectionMap = {};
-        win.exhibit.configureFromDOM();
-    };
-
-    EC.reinit = function(win) {
-        var killFacets = function(w) {
-            var i
-            , facets = w && w.exhibit && w.exhibit.getUIContext
-                && w.exhibit.getUIContext().getCollection()._facets;
-            
-            if (facets) {
-                for (i=0; i<facets.length; i++) {
-                    facets[i].dispose();
-                }
-            }
-        };
-
-        win = win || EC.win;
-        killFacets(win);
-        EC.unrender(win.document);
-        if (win.Exhibit.History.enabled)
-            win.Exhibit.History.eraseState();
-        $(document).one('dataload.exhibit',function() {
-            //need to set proper 'this" on configure call
-            //so can't just pass configureFromDOM to loadLinks
-            win.exhibit.configureFromDOM();
-        });
-        win.database.loadLinks()
-    };
-
-    findFacet = function (elt,win) {
+    , findFacet = function (elt,win) {
         var i, 
         collection = (win||EC.win).exhibit.getUIContext().getCollection(),
         facets = collection._facets;
@@ -559,178 +567,140 @@ ExhibitConf.exprSelector = function (props) {
         if (console && console.log) {
             console.log("can't find facet!");
         }
-    };
-    
-    EC.open = function() {
-        var deferred = $.Deferred(),
-        input = $('<input type="file"></input>');
+    }
 
-        input.change(function(evt) {
-            var file = evt.target.files[0],
-            reader = new FileReader();
-            reader.onload = function() {
-                deferred.resolve(reader.result);
-            };
-            reader.readAsText(file);
+    , markExhibit = function(dom) {
+        dom = $(dom || EC.win.document.body);
+        $('[ex\\:role="view"]',dom).addClass('exhibit-editable');
+        $('[ex\\:role="facet"]',dom).addClass('exhibit-editable');
+        $('[ex\\:role="viewPanel"]',dom).addClass('exhibit-editable');
+        //weird things happen if ids get added after rendering
+        //unfortunately, aloha sometimes does that.
+        //preclude by arranging to remove them
+        $('[ex\\:role]',dom).filter(':not([id])').addClass('exconf-no-id');
+    }
+
+    , unMarkExhibit = function(dom) {
+        dom = $(dom || EC.win.document.body);
+        $('[ex\\:role="view"]',dom).removeClass('exhibit-editable');
+        $('[ex\\:role="facet"]',dom).removeClass('exhibit-editable');
+        $('[ex\\:role="viewPanel"]',dom).removeClass('exhibit-editable');
+    }
+
+    , handleEditClick = function(event) {
+        var widget = $(event.target).parents('.exhibit-edit-tab')
+        , elt = widget.parent();
+
+        widget.detach();
+        //click causes event to trigger twice; not sure why.
+        event.stopImmediatePropagation();
+        EC.configureElement(elt).done(function () {
+            var f;
+            if (EC.win.Exhibit.getRoleAttribute(elt) === 'facet') {
+                f = findFacet(elt);
+                if (f) f.dispose();
+            }
+            EC.rerender()
         });
-        input.click();
-        return deferred.promise();
-    };
+    }
+    , handleDeleteClick = function(event) {
+        var widget = $(event.target).parents('.exhibit-edit-tab')
+        , elt = widget.parent();
 
-    EC.saveHtml = function(html) {
-        uri = "data:application/octet-stream;charset=utf-8,"
-            + encodeURIComponent('<html>'+html+'</html>');
-        window.open(uri,"_blank");
-    };
+        event.stopImmediatePropagation();
+        widget.detach();
+        elt.mahaloBlock();
+        elt.detach();
+        EC.rerender();
+    }
+    , editButton = $('<button>Edit</button>')
+    , deleteButton =  $('<button>Delete</button>')
+    , editWidget = $('<div class="exhibit-edit-tab"/>')
+        .append(editButton)
+        .append(deleteButton)
+    
+    , showEditWidget = function (e) {
+        //quick hack: set parent css so edit button absolute positioning
+        //is relative to parent
 
-    EC.loadInWindow = function(html) {
-        //deal with fact that jquery can't handle html, head, body tags
-        //also that jquery executes scripts without adding them to dom
-        //which breaks exhibit, which is looking for its scripts in the dom
-        var i,
-        doc = EC.win.get(0).document,
-        scriptRe = /<\s*script[^>]*>[\s\S]*?<\/script>/img
-        head = html.match(/<\s*head[^>]*>([\s\S]*)<\/head>/im)[1],
-        body = html.match(/<\s*body[^>]*>([\s\S]*)<\/body>/im)[1],
-        scripts = head.match(scriptRe),
-        scriptlessHead = head.split(scriptRe).join(' '),
-        insertScript = function(s) {
-            var src = s.match(/src\s*=\s*['"]([^"']*?)["']/i)[1]; //'"
-            scr = document.createElement("script");
-            scr.type="text/javascript";
-            scr.src=src;
-            doc.head.appendChild(scr);
-        };
-        
-        if (head) {
-            $(doc.head).empty().append(scriptlessHead);
+        //don't rely on bubbling, because I'd have to stop
+        //propagation which could break other mouseovers
+        var parents = $(e.target).parents('.exhibit-editable')
+        , realTarget = parents.length > 0 ?
+            parents.eq(0) : $(e.target)
+        , role = Exhibit.getRoleAttribute(realTarget.get(0));
+        editWidget.detach();
+        //need to raeattach events because aloha is removing them
+        editButton.on('click.exconf',handleEditClick);
+        deleteButton.on('click.exconf',handleDeleteClick);
+        editButton.text('Edit ' + role);
+        deleteButton.text('Delete ' + role);
+        $(realTarget).css('position','relative').prepend(editWidget);
+    }
+    , saveRange = function() {
+        /* having some bizarre problems saving ranges
+           when I use cloneRange()
+           the cloned range ends up mutating as selection changes
+           so, hack, manually clone the range */
+        var sel = EC.win.getSelection()
+        , range
+        if (sel.rangeCount > 0) {
+            range = sel.getRangeAt(0);
+            EC.range = {sc: range.startContainer,
+                        so: range.startOffset,
+                        ec: range.endContainer,
+                        eo: range.endContainerOffset};
         }
-        if (scripts.length > 0) {
-            for (i=0; i<scripts.length; i++) {
-                insertScript(scripts[i]);
+    };
+
+    editWidget.children().wrap('<div/>');
+
+    EC.startEditPage = function() {
+        markExhibit();
+        //      $(EC.win.document.body)
+        //          .wrapInner('<div class="exhibit-wrapper"></div>');
+        $(EC.win.document.body).addClass('exhibit-editing');
+        $('.exhibit-editable').alohaBlock();
+        $('.exhibit-editable')
+            .after('<div class="exconf-whitespace">&nbsp;</div>')
+            .before('<div class="exconf-whitespace">&nbsp;</div>');
+        $('#main').aloha();
+        //alohaBlock "cleans up" html and destroys events bound to it
+        //so necessary to rerender after alohaBlock calls
+        //better plan: alohaBlock once before editing begins
+        //so rerendering doesn't happen here
+        EC.rerender();
+        $('#exedit-menu').mouseenter(saveRange);
+        $(EC.win.document.body).on('mouseover','.exhibit-editable',
+                                   showEditWidget);
+    };
+
+    EC.stopEditPage = function () {
+        $(EC.win.document.body)
+            .removeClass('exhibit-editing')
+            .off('mouseover','.exhibit-editable',showEditWidget);
+        deleteButton.off('click.exconf');
+        editButton.off('click.exconf'); //remove since re-add
+        $('#main').mahalo();
+        $('#exedit-menu').off('mouseenter',saveRange);
+        $('.exhibit-editable').mahaloBlock();
+        $('.exconf-whitespace').each(function() {
+            var jq = $(this);
+            if (jq.text() === '&nbsp;') {
+                jq.remove();
             }
-        }
-        if (body) {
-            $(doc.body).empty().append(body);
-        }
-    };
-
-    (function () {
-
-        var handleEditClick = function(event) {
-            var widget = $(event.target).parents('.exhibit-edit-tab')
-            , elt = widget.parent();
-
-            widget.detach();
-            //click causes event to trigger twice; not sure why.
-            event.stopImmediatePropagation();
-            EC.configureElement(elt).done(function () {
-                var f;
-                if (EC.win.Exhibit.getRoleAttribute(elt) === 'facet') {
-                    f = findFacet(elt);
-                    if (f) f.dispose();
-                }
-                EC.rerender()
-            });
-        }
-        , handleDeleteClick = function(event) {
-            var widget = $(event.target).parents('.exhibit-edit-tab')
-            , elt = widget.parent();
-
-            event.stopImmediatePropagation();
-            widget.detach();
-            elt.mahaloBlock();
-            elt.detach();
-            EC.rerender();
-        }
-        , editButton = $('<button>Edit</button>')
-        , deleteButton =  $('<button>Delete</button>')
-        , editWidget = $('<div class="exhibit-edit-tab"/>')
-            .append(editButton)
-            .append(deleteButton)
-        
-        , showEditWidget = function (e) {
-            //quick hack: set parent css so edit button absolute positioning
-            //is relative to parent
-
-            //don't rely on bubbling, because I'd have to stop
-            //propagation which could break other mouseovers
-            var parents = $(e.target).parents('.exhibit-editable')
-            , realTarget = parents.length > 0 ?
-                parents.eq(0) : $(e.target)
-            , role = Exhibit.getRoleAttribute(realTarget.get(0));
-            editWidget.detach();
-            //need to raeattach events because aloha is removing them
-            editButton.on('click.exconf',handleEditClick);
-            deleteButton.on('click.exconf',handleDeleteClick);
-            editButton.text('Edit ' + role);
-            deleteButton.text('Delete ' + role);
-            $(realTarget).css('position','relative').prepend(editWidget);
-        }
-        , saveRange = function() {
-            /* having some bizarre problems saving ranges
-               when I use cloneRange()
-               the cloned range ends up mutating as selection changes
-               so, hack, manually clone the range */
-            var sel = EC.win.getSelection()
-            , range
-            if (sel.rangeCount > 0) {
-                range = sel.getRangeAt(0);
-                EC.range = {sc: range.startContainer,
-                            so: range.startOffset,
-                            ec: range.endContainer,
-                            eo: range.endContainerOffset};
+            else {
+                jq.contents().unwrap();
             }
-        };
-
-        editWidget.children().wrap('<div/>');
-
-        EC.startEditPage = function() {
-            markExhibit();
-            //      $(EC.win.document.body)
-            //          .wrapInner('<div class="exhibit-wrapper"></div>');
-            $(EC.win.document.body).addClass('exhibit-editing');
-            $('.exhibit-editable').alohaBlock();
-            $('.exhibit-editable')
-                .after('<div class="exconf-whitespace">&nbsp;</div>')
-                .before('<div class="exconf-whitespace">&nbsp;</div>');
-            $('#main').aloha();
-            //alohaBlock "cleans up" html and destroys events bound to it
-            //so necessary to rerender after alohaBlock calls
-            //better plan: alohaBlock once before editing begins
-            //so rerendering doesn't happen here
-            EC.rerender();
-            $('#exedit-menu').mouseenter(saveRange);
-            $(EC.win.document.body).on('mouseover','.exhibit-editable',
-                                       showEditWidget);
-        };
-
-        EC.stopEditPage = function () {
-            $(EC.win.document.body)
-                .removeClass('exhibit-editing')
-                .off('mouseover','.exhibit-editable',showEditWidget);
-            deleteButton.off('click.exconf');
-            editButton.off('click.exconf'); //remove since re-add
-            $('#main').mahalo();
-            $('#exedit-menu').off('mouseenter',saveRange);
-            $('.exhibit-editable').mahaloBlock();
-            $('.exconf-whitespace').each(function() {
-                var jq = $(this);
-                if (jq.text() === '&nbsp;') {
-                    jq.remove();
-                }
-                else {
-                    jq.contents().unwrap();
-                }
-            });
-            //            $('.exhibit-wrapper').children().unwrap();
-            unMarkExhibit();
-            EC.rerender();
-        };
-    })();
+        });
+        //            $('.exhibit-wrapper').children().unwrap();
+        unMarkExhibit();
+        EC.rerender();
+    };
 })();
 
 /* Data Link Editor */
+
 ExhibitConf.dataMimeTypes = [];
 ExhibitConf.editDataLinks = function() {
     var EC = ExhibitConf

@@ -19,39 +19,36 @@ ExhibitConf.Editor = {
     , todo = function() {alert('todo');};
 
     EE.addComponent = function(component, parent) {
-	var sel, range;
+	var sel, range
+	, config = ExhibitConf.configureElement(component);
 
-	if (parent) {
-	    //insert in specified node
-	    parent.append(component);
-	} else {
-	    //insert at current selection
-	    /* hack: menu access is messing selection
-	       so, record selection whenever menu is accessed
-	       use that recorded selection 
-	    sel = EC.win.getSelection();
-	    if (sel.rangeCount === 0) {
-		alert('no selection!');
-	    }
-	    range = EC.win.getSelection().getRangeAt(0);
-	    if ($(range.commonAncestorContainer)
-		.parents('#main').length === 0) {
-		range = EC.range;
-	    }
-	    */
-	    range = document.createRange();
-	    range.setStart(ExhibitConf.range.sc, ExhibitConf.range.so);
-	    range.setEnd(ExhibitConf.range.ec, ExhibitConf.range.eo);
-	    range.insertNode(component.get(0));
-	}
-	config = ExhibitConf.configureElement(component);
 	config.done(function () {
-                component.alohaBlock();
-                ExhibitConf.rerender();
-                    });
-	config.fail(function() {
-	    component.remove();
-	});
+            if (parent) {
+                //insert in specified node
+                parent.append(component);
+            } else {
+                //insert at current selection
+                /* hack: menu access is messing selection
+                   so, record selection whenever menu is accessed
+                   use that recorded selection 
+                   sel = EC.win.getSelection();
+                   if (sel.rangeCount === 0) {
+                   alert('no selection!');
+                   }
+                   range = EC.win.getSelection().getRangeAt(0);
+                   if ($(range.commonAncestorContainer)
+                   .parents('#main').length === 0) {
+                   range = EC.range;
+                   }
+                */
+                range = document.createRange();
+                range.setStart(EC.range.sc, EC.range.so);
+                range.setEnd(EC.range.ec, EC.range.eo);
+                range.insertNode(component.get(0));
+            }
+            component.alohaBlock();
+            EC.rerender();
+        });
     };
     
     EE.openFile = function() {
