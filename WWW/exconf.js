@@ -83,12 +83,17 @@ ExhibitConf = {ranges: []};
     };
 
     EC.saveHtml = function(html) {
-        var uri = "data:application/octet-stream;charset=utf-8,"
+        var uri;
+
+        html = html.replace(/(<\/[a-z]*>)/g,'$1\n'); //'pretty print'
+        uri = "data:application/octet-stream;charset=utf-8,"
             + encodeURIComponent('<html>'+html+'</html>');
         window.open(uri,"_blank");
     };
 }());
 
+
+/* utility for choosing an expression (common case: existing db property)*/
 ExhibitConf.exprSelector = function (props) {
     var
     selector = $('<select></select>')
@@ -666,38 +671,36 @@ ExhibitConf.exprSelector = function (props) {
         }
     };
 
-    editWidget.children().wrap('<div/>');
+    editWidget.children().wrap('<div/>'); //stacked layout
 
-    EC.startEditPage = function() {
+    EC.startEditPage = function(dom) {
         markExhibit();
         //      $(EC.win.document.body)
         //          .wrapInner('<div class="exhibit-wrapper"></div>');
-        $(EC.win.document.body).addClass('exhibit-editing');
-        $('.exhibit-editable').alohaBlock();
-        $('.exhibit-editable')
+        dom.addClass('exhibit-editing');
+        $('.exhibit-editable',dom).alohaBlock();
+        $('.exhibit-editable',dom)
             .after('<div class="exconf-whitespace">&nbsp;</div>')
             .before('<div class="exconf-whitespace">&nbsp;</div>');
-        $('#main').aloha();
+        dom.aloha();
         //alohaBlock "cleans up" html and destroys events bound to it
         //so necessary to rerender after alohaBlock calls
         //better plan: alohaBlock once before editing begins
         //so rerendering doesn't happen here
         EC.rerender();
         $('#exedit-menu').mouseenter(saveRange);
-        $(EC.win.document.body).on('mouseover','.exhibit-editable',
-                                   showEditWidget);
+        dom.on('mouseover','.exhibit-editable', showEditWidget);
     };
 
-    EC.stopEditPage = function () {
-        $(EC.win.document.body)
-            .removeClass('exhibit-editing')
+    EC.stopEditPage = function (dom) {
+        dom.removeClass('exhibit-editing')
             .off('mouseover','.exhibit-editable',showEditWidget);
         deleteButton.off('click.exconf');
         editButton.off('click.exconf'); //remove since re-add
-        $('#main').mahalo();
+        dom.mahalo();
         $('#exedit-menu').off('mouseenter',saveRange);
-        $('.exhibit-editable').mahaloBlock();
-        $('.exconf-whitespace').each(function() {
+        $('.exhibit-editable',dom).mahaloBlock();
+        $('.exconf-whitespace',dom).each(function() {
             var jq = $(this);
             if (jq.text() === '&nbsp;') {
                 jq.remove();

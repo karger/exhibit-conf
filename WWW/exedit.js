@@ -63,18 +63,22 @@ ExhibitConf.Editor = {
 
     
     
-    EE.saveAs = function() {
+    EE.saveAs = function(w) {
         //clone(true) to copy data as well.
-        var dom = $(document.documentElement).clone(true);
+        var dom, body;
+
+        EE.preview();  //clean up any current editing
+        dom = $(document.documentElement).clone(true);
+        body = dom.find('#page-container');
+        dom.find('body').empty().append(body.children());
         EC.unrender(dom);
+        dom.find('.exedit').remove();
         $('link[rel="exedit/script"]',dom).each(function() {
-            var a = dom;
             //can't use jquery; it evaluates the scripts
             this.parentNode
                 .replaceChild($(this).data('exedit-script'),
                               this);
         });
-        dom.find('.exedit').remove();
         EC.saveHtml(dom.html());
     };
 
@@ -98,8 +102,8 @@ ExhibitConf.Editor = {
     };
 
     EE.stopEdit = function() {
-        $('#main').show();
         EE.cleanup();
+        EE.bodyContainer.show();
     };
 
     EE.preview = function() {
@@ -117,24 +121,24 @@ ExhibitConf.Editor = {
     EE.editPage = function() {
         EE.cleanup(function () {
             $('.page-insert-menu').hide();
-            ExhibitConf.stopEditPage();
+            ExhibitConf.stopEditPage(EE.bodyContainer);
             ExhibitConf.rerender();
         });
-        $('#main').show();
+        EE.bodyContainer.show();
         $('.page-insert-menu').show();
         ExhibitConf.rerender();
-        ExhibitConf.startEditPage();
+        ExhibitConf.startEditPage(EE.bodyContainer);
     };
     
     EE.lensEditor = {};
     EE.editLens = function() {
-        var lens = $('[ex\\:role="lens"]',EC.win.document),
-        editContainer = EE.lensEditorTemplate.clone()
+        var lens = $('[ex\\:role="lens"]',EC.win.document)
+        , editContainer = EE.lensEditorTemplate.clone()
         , lensContainer = $('.lens-editor-lens-container',editContainer);
 
         EE.cleanup(function () {
             $('.lens-insert-menu').hide();
-            $('#main').show();
+            $(EE.bodyContainer).show();
             EE.lensEditor.stopEdit();
             editContainer.remove();
             ExhibitConf.rerender();
@@ -146,7 +150,7 @@ ExhibitConf.Editor = {
         if (lens.length === 0) {
             lens = $('<div ex:role="lens"></div>');
         }
-        $('#main').hide();
+        EE.bodyContainer.hide();
         $('.lens-insert-menu').show();
     };
 
@@ -170,9 +174,9 @@ ExhibitConf.Editor = {
     };
 
     // replace current contents being edited with a new document
-    EE.insertDoc = function(data) {
+    EE.insertDoc = function(html) {
         var 
-        clean = data.replace(/<!DOCTYPE[^>]*>/,""),
+        clean = html.replace(/<!DOCTYPE[^>]*>/,""),
         parser = new DOMParser(),
         script = /script/i,
         doc = parser.parseFromString(clean, "text/html");
@@ -190,14 +194,11 @@ ExhibitConf.Editor = {
         });
 
         //can't move elements between docs so must detach first.
-        $('body',document)
-            .children()
-            .not('.aloha,.aloha-ui,.aloha-ui-context,.pasteContainer')
-            .remove();
-        $('body',document)
+        EE.bodyContainer.empty()
             .prepend($('body',doc).detach().children());
-        $('head',document).empty().append($('head',doc).detach().children());
         document.title = "Exedit " + $('title',doc).text();
+        $('head',document).empty()
+            .append($('head',doc).detach().children());
     };
 
     EE.newExhibit = function() {
@@ -216,15 +217,12 @@ ExhibitConf.Editor = {
 
     EE.init = function() {
         EE.menu = $('#exedit-menu').detach().show();
-        EE.lensTemplate = $('#lens-template').detach()
-            .removeAttr('id').show().children();
+        EE.bodyContainer = $('#page-container');
         EE.lensEditorTemplate = $('#lens-editor-template').detach()
             .removeAttr('id').show();
-        EE.exhibitTemplate = $('#exhibit-template').detach()
-            .removeAttr('id').show().children();
         EE.headStuff = $('.exedit',document.head)
             .add('link[rel=stylesheet]'); //to get exhibit styles
-        EE.headStuff.addClass('exedit');
+        EE.headStuff.addClass('exedit'); 
         $('head').empty().append('<title>Exedit</title>');
         ExhibitConf.win = window;
     };
