@@ -1,7 +1,7 @@
 /*global ExhibitConf: true, Exhibit, FileReader, $, console, Aloha*/
 
 //Configuration of editor
-ExhibitConf = {ranges: []};
+ExhibitConf = {};
 
 /*Utility functions */
 (function () {
@@ -653,22 +653,6 @@ ExhibitConf.exprSelector = function (props) {
         editButton.text('Edit ' + role);
         deleteButton.text('Delete ' + role);
         $(realTarget).css('position','relative').prepend(editWidget);
-    }
-    , saveRange = function() {
-        /* having some bizarre problems saving ranges
-           when I use cloneRange()
-           the cloned range ends up mutating as selection changes
-           so, hack, manually clone the range */
-        var sel = EC.win.getSelection()
-        , range;
-
-        if (sel.rangeCount > 0) {
-            range = sel.getRangeAt(0);
-            EC.range = {sc: range.startContainer,
-                        so: range.startOffset,
-                        ec: range.endContainer,
-                        eo: range.endContainerOffset};
-        }
     };
 
     editWidget.children().wrap('<div/>'); //stacked layout
@@ -688,7 +672,6 @@ ExhibitConf.exprSelector = function (props) {
         //better plan: alohaBlock once before editing begins
         //so rerendering doesn't happen here
         EC.rerender();
-        $('#exedit-menu').mouseenter(saveRange);
         dom.on('mouseover','.exhibit-editable', showEditWidget);
     };
 
@@ -698,7 +681,6 @@ ExhibitConf.exprSelector = function (props) {
         deleteButton.off('click.exconf');
         editButton.off('click.exconf'); //remove since re-add
         dom.mahalo();
-        $('#exedit-menu').off('mouseenter',saveRange);
         $('.exhibit-editable',dom).mahaloBlock();
         $('.exconf-whitespace',dom).each(function() {
             var jq = $(this);
@@ -903,7 +885,7 @@ ExhibitConf.createLensEditor = function(lens, lensContainer) {
     addNode = function(node, attr) {
         //remember/restore range since interaction w/dialog clears it
         //range = Aloha.getSelection(EC.win).getRangeAt(0), 
-        var range = EC.win.getSelection().getRangeAt(0)
+        var range = EC.win.getSelection().getRangeAt(0).cloneRange()
         , insertNodeContent = function() {
             range.insertNode(node.get(0));
         };
@@ -924,9 +906,8 @@ ExhibitConf.createLensEditor = function(lens, lensContainer) {
     };
 
     editor.stopEdit = function() {
-        tracker.dispose(); //destroys tracker
+        tracker.dispose(); 
         alohaEditor.mahalo();
-        //      ExhibitConf.mahalo(alohaEditor);
         alohaEditor.empty();
         lensContainer.removeClass('lens-edit-lens-container');
     };
@@ -945,6 +926,8 @@ ExhibitConf.createLensEditor = function(lens, lensContainer) {
 
     return editor;
 };
+
+/* Data Editor */
 
 ExhibitConf.startEditData = function() {
     var EC = ExhibitConf
@@ -997,7 +980,9 @@ ExhibitConf.startEditData = function() {
                     }
                 }
             }
-            ExhibitConf.rerender();
+            $(EC.win.exhibit.getUIContext().getCollection().onFacetUpdated());
+//                .trigger('onItemsChanged.exhibit');
+//            ExhibitConf.rerender();
         };
 
         if ((id !== null) 

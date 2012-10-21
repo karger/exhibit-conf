@@ -16,7 +16,7 @@
       define('jquery', function() {return window.jQuery;});
       define('jqueryui', function() {return window.jQuery.ui;});
       Aloha = {settings: {plugins: {block: {dragdrop: true }}}};
-/*
+
       Aloha.settings.toolbar = {
           tabs: [
               {label: 'Exhibit',
@@ -24,7 +24,8 @@
               }
 	  ],
       };
-*/
+
+
     </script>
     <script src="/karger/Aloha/lib/aloha-bare.js"
 	    data-aloha-plugins="common/align,common/block,common/commands,common/format,common/image,common/link,common/paste,common/table,common/undo,common/list"></script>
@@ -32,7 +33,7 @@
 
 
     <!-- Exhibit -->
-    <script src="http://people.csail.mit.edu/karger/Exhibit3/api/exhibit-api.js?autocreate=false"></script>
+    <script src="http://people.csail.mit.edu/karger/Exhibit3/api/exhibit-api.js?autocreate=false&bundle=false"></script>
     <link rel="exhibit-extension" href="http://people.csail.mit.edu/karger/Exhibit3/api/extensions/time/time-extension.js"></script>
 
 
@@ -51,48 +52,48 @@
   <body>
     <ul id="exedit-menu" class="topnav exedit" style="display:none">
       <li class='file-menu'>
-	<a href="#">File</a>
+	<span href="#">File</span>
 	<ul class="subnav">
-	  <li><a href="#" class="new-button">New</a></li>
-	  <li><a href="#" class="open-button">Open</a></li>
-	  <li><a href="#" class="save-button">Save As</a></li>
+	  <li><span href="#" class="new-button">New</span></li>
+	  <li><span href="#" class="open-button">Open</span></li>
+	  <li><span href="#" class="save-button">Save As</span></li>
 	</ul>
       </li>
       <li class='edit-menu'>
-	<a href="#">Edit</a>
+	<span href="#">Edit</span>
 	<ul class="subnav">
-	  <li><a href="#" class="preview-button">Preview</a></li>
-	  <li><a href="#" class="edit-exhibit-button">Page</a></li>
-	  <li><a href="#" class="edit-lens-button">Lenses</a></li>
-	  <li><a href="#" class="edit-links-button">Data Links</a></li>
-	  <li><a href="#" class="edit-data-button">Data</a></li>
+	  <li><span href="#" class="preview-button">Preview</span></li>
+	  <li><span href="#" class="edit-exhibit-button">Page</span></li>
+	  <li><span href="#" class="edit-lens-button">Lenses</span></li>
+	  <li><span href="#" class="edit-links-button">Data Links</span></li>
+	  <li><span href="#" class="edit-data-button">Data</span></li>
 	</ul>
       </li>
       <li class='page-insert-menu'>
-	<a href="#">Insert</a>
+	<span href="#">Insert</span>
 	<ul class="subnav">
-	  <li><a href="#" class="add-view-button">View</a></li>
-	  <li><a href="#" class="add-facet-button">Facet</a></li>
+	  <li><span href="#" class="add-view-button">View</span></li>
+	  <li><span href="#" class="add-facet-button">Facet</span></li>
 	</ul>
       </li>
       <li class='lens-insert-menu'>
-	<a href="#">Insert</a>
+	<span href="#">Insert</span>
 	<ul class="subnav">
-	  <li><a href="#" class="add-content-button">Text</a></li>
-	  <li><a href="#" class="add-link-button">Link</a></li>
-	  <li><a href="#" class="add-img-button">Image</a></li>
+	  <li><span href="#" class="add-content-button">Text</span></li>
+	  <li><span href="#" class="add-link-button">Link</span></li>
+	  <li><span href="#" class="add-img-button">Image</span></li>
 	</ul>
       </li>
       <li class='help-menu'>
-	<a href="#">Help</a>
+	<span href="#">Help</span>
 	<ul class="subnav">
-	  <li><a href="#" class="help-button">Help</a></li>
-	  <li><a href="#" class="tutorial-button">Tutorial</a></li>
-	  <li><a href="#" class="wizard-button">Wizard</a></li>
-	  <li><a href="#" class="simile-button">Exhibit Web Site</a></li>
+	  <li><span href="#" class="help-button">Help</span></li>
+	  <li><span href="#" class="tutorial-button">Tutorial</span></li>
+	  <li><span href="#" class="wizard-button">Wizard</span></li>
+	  <li><span href="#" class="simile-button">Exhibit Web Site</span></li>
 	</ul>
       </li>
-      <li class='title'><a href='#'>Exhibit Editor</a></li>
+      <li class='title'><span href='#'>Exhibit Editor</span></li>
     </ul> <!-- end of menu bar -->
 
     <div id="page-container"></div>

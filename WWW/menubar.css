@@ -62,7 +62,7 @@ filter: progid:DXImageTransform.Microsoft.gradient(
     position:relative;
 }
 
-.topnav li a {
+.topnav li span {
     padding:10px 25px;
     text-shadow:1px 1px 0px #fff;
     text-decoration:none;
@@ -77,13 +77,15 @@ filter: progid:DXImageTransform.Microsoft.gradient(
     transition:color 0.2s linear, background 0.2s linear;       
 }
 
-.topnav li a:hover {
+.topnav li span:hover {
     background:#f8f8f8;
     color:#282828;
+    cursor: pointer;
 }
 
-.topnav li:hover > a {
+.topnav li:hover > span {
     background:#fff;
+    cursor: pointer;
 }
 
 .topnav li.title {

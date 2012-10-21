@@ -1,4 +1,4 @@
-/*global $, Exhibit, ExhibitConf, alert, DOMParser, console*/
+/*global $, Exhibit, ExhibitConf, alert, DOMParser, console, Aloha*/
 
 ExhibitConf.Editor = {
     cleanupCallback: function() {}
@@ -8,21 +8,70 @@ ExhibitConf.Editor = {
     var EC = ExhibitConf
     , EE = EC.Editor
 
-    , configMenuBar = function(bar, conf) {//list of class/function pairs
-        bar.on('click', 'a[class]', function () {
+    //conf is a mapping from classes (in bar) to functions
+    , configureMenuBar = function(bar, conf) {
+        /* 
+           Menu interaction messes up the selection.  So it's
+           important to save the selection before menu interaction and
+           restore after.  I'm having some bizarre problems saving
+           ranges: even when I use cloneRange() which supposedly
+           copies by value the cloned range ends up mutating as
+           selection changes.  So, hack, manually clone the range.
+        */
+        var rangeData = {doc: document}
+        
+        , saveRange = function() {
+            var sel = EC.win.getSelection()
+            , range;
+
+            if (sel.rangeCount > 0) {
+                range = sel.getRangeAt(0);
+                rangeData = {
+                    doc: range.startContainer.ownerDocument,
+                    sc: range.startContainer,
+                    so: range.startOffset,
+                    ec: range.endContainer,
+                    eo: range.endOffset
+                    };
+            }
+        }
+        
+        , getRange = function() {
+            var range = rangeData.doc.createRange();
+
+            if (rangeData.sc) {
+                range.setStart(rangeData.sc, rangeData.so);
+                range.setEnd(rangeData.ec, rangeData.eo);
+                }
+            return range;
+        }
+
+        , restoreRange = function() {
+            var range = getRange();
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
+        };
+
+        bar.on('click', 'span[class]', function (e) {
+            restoreRange();
             var cl = $(this).attr('class');
             if (cl && conf[cl]) {
                 conf[cl]();
             }
-            return true; //allow propagation
+            return false; //prevent propagation
         });
+        //something in menu interaction destroys (even cloned) ranges
+        //so we need a contorted save-by-value method
+        bar.mouseenter(saveRange)
+            .mouseleave(restoreRange);
     }
 
     , todo = function() {alert('todo');};
 
     EE.addComponent = function(component, parent) {
-        var sel, range
-        , config = ExhibitConf.configureElement(component);
+        var sel
+        , range
+        , config = EC.configureElement(component);
 
         config.done(function () {
             if (parent) {
@@ -43,10 +92,11 @@ ExhibitConf.Editor = {
                    range = EC.range;
                    }
                 */
-                range = document.createRange();
-                range.setStart(EC.range.sc, EC.range.so);
-                range.setEnd(EC.range.ec, EC.range.eo);
+                //range = EC.getRange()
+                range = EC.win.getSelection().getRangeAt(0);
+                range.deleteContents();
                 range.insertNode(component.get(0));
+                range.detach();
             }
             component.alohaBlock();
             EC.rerender();
@@ -225,6 +275,13 @@ ExhibitConf.Editor = {
         EE.headStuff.addClass('exedit'); 
         $('head').empty().append('<title>Exedit</title>');
         ExhibitConf.win = window;
+
+        Aloha.require(['ui/ui', 'ui/button'], function(Ui, Button) {
+                var button = Ui.adopt("addFacet", Button, {
+                        text: "add facet",
+                        click: EE.addFacet
+                    });
+            });
     };
     
     EE.visitSimile = function() {
@@ -234,7 +291,7 @@ ExhibitConf.Editor = {
     EE.activate = function() {
         var menu = EE.menu.clone()
         , spacer=$('<div class="exedit"></div>');
-        configMenuBar(menu, 
+        configureMenuBar(menu, 
                       {"new-button":  EE.newExhibit,
                        "open-button": EE.openFile,
                        "save-button": EE.saveAs,
@@ -260,9 +317,6 @@ ExhibitConf.Editor = {
         spacer.height(menu.height()).insertAfter(menu);
     };
 
-    if (console) {
-        console.log('waiting');
-    }
     $(document).on("scriptsLoaded.exhibit",function() {
         var parseUrlArgs = function() {
             var args = window.location.search.substr(1).split('&')
