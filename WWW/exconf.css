@@ -22,6 +22,8 @@
 .lens-edit-lens-container [ex\:content]:after {
     content: attr(ex\:content);
 }
+.lens-edit-lens-container [ex\:content] {
+}
 .lens-edit-lens-container [ex\:content]:hover {
     border: 2px solid red;
 }

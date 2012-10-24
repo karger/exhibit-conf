@@ -15,16 +15,24 @@
     //aloha loading own copies tends to break exhibit
       define('jquery', function() {return window.jQuery;});
       define('jqueryui', function() {return window.jQuery.ui;});
-      Aloha = {settings: {plugins: {block: {dragdrop: true }}}};
+      Aloha = {settings: {}};
+
+      Aloha.settings.sidebar = {disabled: true};
+
+      Aloha.settings.plugins = {
+          block: {dragdrop: true },
+          format: {config: [ 'b', 'i', 'p', 'sub', 'sup', 'del',
+              'title', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'pre',
+              'removeFormat' ]
+      }};
 
       Aloha.settings.toolbar = {
           tabs: [
-              {label: 'Exhibit',
-               components: ["addFacet", "addView", "addViewPanel"]
-              }
+                 {label: 'Exhibit',
+                   components: ["addFacet", "addView", "addViewPanel"]
+                 }
 	  ],
       };
-
 
     </script>
     <script src="/karger/Aloha/lib/aloha-bare.js"

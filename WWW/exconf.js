@@ -3,6 +3,44 @@
 //Configuration of editor
 ExhibitConf = {};
 
+/* Range protection function */
+(function () {
+    var EC=ExhibitConf
+    , rangeData = {doc: document};
+    
+    EC.saveRange = function() {
+        var sel = EC.win.getSelection()
+        , range;
+
+        if (sel.rangeCount > 0) {
+            range = sel.getRangeAt(0);
+            rangeData = {
+                doc: range.startContainer.ownerDocument,
+                sc: range.startContainer,
+                so: range.startOffset,
+                ec: range.endContainer,
+                eo: range.endOffset
+            };
+        }
+    }
+    
+    EC.getRange = function() {
+        var range = rangeData.doc.createRange();
+
+        if (rangeData.sc) {
+            range.setStart(rangeData.sc, rangeData.so);
+            range.setEnd(rangeData.ec, rangeData.eo);
+        }
+        return range;
+    }
+
+    EC.restoreRange = function() {
+        var range = EC.getRange();
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+    };
+}());
+
 /*Utility functions */
 (function () {
     var EC = ExhibitConf;

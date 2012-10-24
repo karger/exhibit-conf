@@ -18,42 +18,9 @@ ExhibitConf.Editor = {
            copies by value the cloned range ends up mutating as
            selection changes.  So, hack, manually clone the range.
         */
-        var rangeData = {doc: document}
-        
-        , saveRange = function() {
-            var sel = EC.win.getSelection()
-            , range;
-
-            if (sel.rangeCount > 0) {
-                range = sel.getRangeAt(0);
-                rangeData = {
-                    doc: range.startContainer.ownerDocument,
-                    sc: range.startContainer,
-                    so: range.startOffset,
-                    ec: range.endContainer,
-                    eo: range.endOffset
-                    };
-            }
-        }
-        
-        , getRange = function() {
-            var range = rangeData.doc.createRange();
-
-            if (rangeData.sc) {
-                range.setStart(rangeData.sc, rangeData.so);
-                range.setEnd(rangeData.ec, rangeData.eo);
-                }
-            return range;
-        }
-
-        , restoreRange = function() {
-            var range = getRange();
-            window.getSelection().removeAllRanges();
-            window.getSelection().addRange(range);
-        };
 
         bar.on('click', 'span[class]', function (e) {
-            restoreRange();
+            EC.restoreRange();
             var cl = $(this).attr('class');
             if (cl && conf[cl]) {
                 conf[cl]();
@@ -62,18 +29,16 @@ ExhibitConf.Editor = {
         });
         //something in menu interaction destroys (even cloned) ranges
         //so we need a contorted save-by-value method
-        bar.mouseenter(saveRange)
-            .mouseleave(restoreRange);
+        bar.mouseenter(EC.saveRange)
+            .mouseleave(EC.restoreRange);
     }
 
     , todo = function() {alert('todo');};
 
     EE.addComponent = function(component, parent) {
-        var sel
-        , range
-        , config = EC.configureElement(component);
-
-        config.done(function () {
+        EC.saveRange();
+        EC.configureElement(component).done(function () {
+            var range = EC.getRange();
             if (parent) {
                 //insert in specified node
                 parent.append(component);
@@ -93,7 +58,6 @@ ExhibitConf.Editor = {
                    }
                 */
                 //range = EC.getRange()
-                range = EC.win.getSelection().getRangeAt(0);
                 range.deleteContents();
                 range.insertNode(component.get(0));
                 range.detach();
@@ -111,15 +75,12 @@ ExhibitConf.Editor = {
         $.ajax(url, {dataType:"text"}).done(EE.beginEdit);
     };
 
-    
-    
-    EE.saveAs = function(w) {
-        //clone(true) to copy data as well.
+    EE.exhibitToHtml = function (doc) {
         var dom, body;
 
         EE.preview();  //clean up any current editing
-        dom = $(document.documentElement).clone(true);
-        body = dom.find('#page-container');
+        dom = $((doc || document).documentElement).clone(true);
+        body = dom.find('#page-container').detach();
         dom.find('body').empty().append(body.children());
         EC.unrender(dom);
         dom.find('.exedit').remove();
@@ -129,7 +90,25 @@ ExhibitConf.Editor = {
                 .replaceChild($(this).data('exedit-script'),
                               this);
         });
-        EC.saveHtml(dom.html());
+        return '<html>' + dom.html() + '</html>';
+    }
+
+    EE.pageToWeb = function(doc) {
+        var dom = EE.ExhibitToHtml();
+    };
+    
+    EE.saveAs = function(d) {
+        //clone(true) to copy data as well.
+        var html = EE.exhibitToHtml()
+            .replace(/(<\/[a-z]*>)/g,'$1\n')  // 'prett print'
+        , uri = "data:application/octet-stream;charset=utf-8,"
+            + encodeURIComponent('<html>'+html+'</html>');
+        window.open(uri,"_blank");
+    };
+
+    EE.addViewPanel = function() {
+        EE.addComponent($('<div ex:role="viewPanel"></div>')
+                        .attr( 'class','exhibit-editable'));
     };
 
     EE.addFacet = function() {
@@ -277,9 +256,17 @@ ExhibitConf.Editor = {
         ExhibitConf.win = window;
 
         Aloha.require(['ui/ui', 'ui/button'], function(Ui, Button) {
-                var button = Ui.adopt("addFacet", Button, {
+                Ui.adopt("addFacet", Button, {
                         text: "add facet",
                         click: EE.addFacet
+                    });
+                Ui.adopt("addView", Button, {
+                        text: "add view",
+                        click: EE.addView
+                    });
+                Ui.adopt("addViewPanel", Button, {
+                        text: "add view panel",
+                        click: EE.addViewPanel
                     });
             });
     };
