@@ -546,7 +546,11 @@ ExhibitConf.exprSelector = function (props) {
             return entry;
         }
         , addView = function() {
-            viewList.append(makeViewEntry($('<div ex:role="view" ex:viewClass="TileView" class="exhibit-editable"></div>')));
+            var view = $('<div/>',
+                {"ex:role": "view",
+                 "ex:viewClass": "TileView",
+                 "class": "exhibit-editable exconf-no-id"});
+            viewList.append(makeViewEntry(view));
             setCount(++viewCount);
         }
         , addViewButton = $('<input type="Button"/>')
@@ -638,6 +642,7 @@ ExhibitConf.exprSelector = function (props) {
         $('[ex\\:role="view"]',dom).removeClass('exhibit-editable');
         $('[ex\\:role="facet"]',dom).removeClass('exhibit-editable');
         $('[ex\\:role="viewPanel"]',dom).removeClass('exhibit-editable');
+        $('[ex\\:role]',dom).removeClass('exconf-no-id');
     }
 
     , handleEditClick = function(event) {
@@ -701,6 +706,12 @@ ExhibitConf.exprSelector = function (props) {
         //          .wrapInner('<div class="exhibit-wrapper"></div>');
         dom.addClass('exhibit-editing');
         $('.exhibit-editable',dom).alohaBlock();
+        $('.exconf-no-id[id]').each(function () {
+            //AlohaBlock adds ids, which confuses exhibit
+            //however, ids are needed for mahaloBlock
+            $(this).attr('data-aloha-id',$(this).attr('id'))
+                .removeAttr('id');
+            });
         $('.exhibit-editable',dom)
             .after('<div class="exconf-whitespace">&nbsp;</div>')
             .before('<div class="exconf-whitespace">&nbsp;</div>');
@@ -719,7 +730,18 @@ ExhibitConf.exprSelector = function (props) {
         deleteButton.off('click.exconf');
         editButton.off('click.exconf'); //remove since re-add
         dom.mahalo();
-        $('.exhibit-editable',dom).mahaloBlock();
+        $('.exhibit-editable',dom).each(function () {
+            var jq = $(this);
+            if (jq.hasClass('exconf-no-id')) {
+                jq.attr('id',jq.attr('data-aloha-id'));
+                }
+            jq.mahaloBlock();
+            jq.removeAttr('data-aloha-id')
+                .removeAttr('id')
+                .removeAttr('data-aloha-block-type')
+                .removeClass('aloha-block')
+                .removeClass('aloha-block-DefaultBlock');
+            });
         $('.exconf-whitespace',dom).each(function() {
             var jq = $(this);
             if (jq.text() === '&nbsp;') {
