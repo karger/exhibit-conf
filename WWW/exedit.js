@@ -90,11 +90,40 @@ ExhibitConf.Editor = {
                 .replaceChild($(this).data('exedit-script'),
                               this);
         });
-        return '<html>' + dom.html() + '</html>';
+        return '<!DOCTYPE html>\n<html>\n' + dom.html() + '\n</html>';
     }
 
-    EE.pageToWeb = function(doc) {
-        var dom = EE.ExhibitToHtml();
+    EE.bingSavePage = function(doc) {
+        var html = EE.exhibitToHtml(doc);
+        $.ajax({
+            type: "POST",
+            url: "http://wins2008.cloudapp.net/MyMovieCollection/Movies/StoreContentPage",
+            // content type sent to the server
+            // contentType: "application/json; charset=utf-8",
+            // data type back from the server
+            dataType: "text",
+            data: encodeURI(html),
+            crossDomain: true,
+            success: function (result) {
+                // "bing:8937a311-abe0-4f4e-9340-8f509799d67f" =>
+                // 8937a311-abe0-4f4e-9340-8f509799d67f
+                var id = result.replace(/"/g, "");
+                var guidId = id.substring(id.indexOf(':') + 1);
+
+                // Print out the access URL, to retrieve the page just
+                // stored.
+                // Example:
+                // http://localhost:57736/Movies/RetrieveContentPage/1d579352-ab8a-494c-821e-205507197eb5?callbackFunc=myCallbackFunc
+                var accessUrl = "Movies/RetrieveContentPage/" + guidId +
+                    "?callbackFunc=myCallbackFunc";
+                alert("http://wins2008.cloudapp.net/MyMovieCollection/" +
+                      accessUrl);
+            },
+            error: function (error) {
+                alert("There was an error posting the data to the server: "
+                      + error.responseText);
+            }   
+        });
     };
     
     EE.saveAs = function(d) {
@@ -282,6 +311,8 @@ ExhibitConf.Editor = {
                       {"new-button":  EE.newExhibit,
                        "open-button": EE.openFile,
                        "save-button": EE.saveAs,
+                       "bing-page-button": EE.bingSavePage,
+                       "bing-data-button": todo,
                        "preview-button": EE.stopEdit,
                        "edit-exhibit-button": EE.editPage,
                        "edit-lens-button": EE.editLens,
@@ -309,6 +340,7 @@ ExhibitConf.Editor = {
             var args = window.location.search.substr(1).split('&')
             , i, arg, split, key, val, result={};
 
+
             for (i=0; i<args.length; i++) {
                 arg = args[i];
                 split = arg.indexOf('=');
@@ -316,7 +348,7 @@ ExhibitConf.Editor = {
                 val = arg.slice(split+1);
 
                 if (split >= 0) {//there is a key
-                    result[key] = val;
+                    result[key] = decodeURIComponent(val);
                 }
 
             }
@@ -350,7 +382,8 @@ ExhibitConf.Editor = {
                 ExhibitConf.reinit();
             })
             .fail(function() {
-                alert("Failed to load " + (urlArgs.page || "blank.html"));
+                alert("Failed to load " + (urlArgs.page || 
+                                           "new document template"));
             });
     });
 }());

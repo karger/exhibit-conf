@@ -715,6 +715,14 @@ ExhibitConf.exprSelector = function (props) {
         $('.exhibit-editable',dom)
             .after('<div class="exconf-whitespace">&nbsp;</div>')
             .before('<div class="exconf-whitespace">&nbsp;</div>');
+        $('body').on('click','.exconf-whitespace', function () {
+            var range=document.createRange();
+//                range.setStartBefore(this);
+//                range.setEndBefore(this);
+            range.setRange(this);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
+            });
         dom.aloha();
         //alohaBlock "cleans up" html and destroys events bound to it
         //so necessary to rerender after alohaBlock calls
@@ -742,15 +750,7 @@ ExhibitConf.exprSelector = function (props) {
                 .removeClass('aloha-block')
                 .removeClass('aloha-block-DefaultBlock');
             });
-        $('.exconf-whitespace',dom).each(function() {
-            var jq = $(this);
-            if (jq.text() === '&nbsp;') {
-                jq.remove();
-            }
-            else {
-                jq.contents().unwrap();
-            }
-        });
+        $('.exconf-whitespace',dom).remove();
         //            $('.exhibit-wrapper').children().unwrap();
         unMarkExhibit();
         EC.rerender();
