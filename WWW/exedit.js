@@ -102,7 +102,7 @@ ExhibitConf.Editor = {
             // contentType: "application/json; charset=utf-8",
             // data type back from the server
             dataType: "text",
-            data: encodeURI(html),
+            data: html,
             crossDomain: true,
             success: function (result) {
                 // "bing:8937a311-abe0-4f4e-9340-8f509799d67f" =>
@@ -114,8 +114,7 @@ ExhibitConf.Editor = {
                 // stored.
                 // Example:
                 // http://localhost:57736/Movies/RetrieveContentPage/1d579352-ab8a-494c-821e-205507197eb5?callbackFunc=myCallbackFunc
-                var accessUrl = "Movies/RetrieveContentPage/" + guidId +
-                    "?callbackFunc=myCallbackFunc";
+                var accessUrl = "Movies/RetrieveContentPage/" + guidId;
                 alert("http://wins2008.cloudapp.net/MyMovieCollection/" +
                       accessUrl);
             },
@@ -253,10 +252,10 @@ ExhibitConf.Editor = {
 
         //can't move elements between docs so must detach first.
         EE.bodyContainer.empty()
-            .prepend($('body',doc).detach().children());
+            .prepend($('body',doc).detach().contents());
         document.title = "Exedit " + $('title',doc).text();
         $('head',document).empty()
-            .append($('head',doc).detach().children());
+            .append($('head',doc).detach().contents());
     };
 
     EE.newExhibit = function() {
