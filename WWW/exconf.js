@@ -25,12 +25,16 @@ ExhibitConf = {};
     }
     
     EC.getRange = function() {
-        var range = rangeData.doc.createRange();
+        try {
+            var range = rangeData.doc.createRange();
 
-        if (rangeData.sc) {
-            range.setStart(rangeData.sc, rangeData.so);
-            range.setEnd(rangeData.ec, rangeData.eo);
+            if (rangeData.sc) {
+                range.setStart(rangeData.sc, rangeData.so);
+                range.setEnd(rangeData.ec, rangeData.eo);
+            } 
+        } catch(e) {
         }
+
         return range;
     }
 
@@ -715,11 +719,11 @@ ExhibitConf.exprSelector = function (props) {
         $('.exhibit-editable',dom)
             .after('<div class="exconf-whitespace">&nbsp;</div>')
             .before('<div class="exconf-whitespace">&nbsp;</div>');
-        $('body').on('click','.exconf-whitespace', function () {
+        $('body').on('click','.exconf-whitespace', function (evt) {
             var range=document.createRange();
-//                range.setStartBefore(this);
-//                range.setEndBefore(this);
-            range.setRange(this);
+                range.setStartBefore(evt.target);
+                range.setEndBefore(evt.target);
+                //            range.setRange(this);
             window.getSelection().removeAllRanges();
             window.getSelection().addRange(range);
             });
@@ -750,7 +754,13 @@ ExhibitConf.exprSelector = function (props) {
                 .removeClass('aloha-block')
                 .removeClass('aloha-block-DefaultBlock');
             });
-        $('.exconf-whitespace',dom).remove();
+        $('.exconf-whitespace',dom).each(function() {
+                var jq=$(this)
+                    , contents = jq.html();
+                contents = contents.replace("&nbsp;","","gi");
+                jq.replaceWith(contents);
+            });
+        //.remove();
         //            $('.exhibit-wrapper').children().unwrap();
         unMarkExhibit();
         EC.rerender();

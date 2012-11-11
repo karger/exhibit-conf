@@ -15,7 +15,16 @@
     border-right:1px solid #c4dbe7;
     border-top:1px solid #c4dbe7;
     border-bottom:2px solid #c4dbe7;
-    z-index: 500
+    z-index: 500;
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+}
+
+.ui-dialog {
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
 }
 
 /*complicated incantations for gradient on topnav bar*/
