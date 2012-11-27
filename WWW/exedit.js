@@ -322,6 +322,7 @@ ExhibitConf.Editor = {
                        "wizard-button": todo,
                        "simile-button": EE.visitSimile,
                        "add-view-button": EE.addView,
+                       "add-view-panel-button": EE.addViewPanel,
                        "add-facet-button": EE.addFacet,
                        "add-content-button": EE.addLensText,
                        "add-link-button": EE.addLensAnchor,

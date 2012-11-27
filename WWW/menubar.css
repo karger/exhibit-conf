@@ -21,12 +21,6 @@
     -webkit-user-select: none;
 }
 
-.ui-dialog {
-    user-select: none;
-    -moz-user-select: none;
-    -webkit-user-select: none;
-}
-
 /*complicated incantations for gradient on topnav bar*/
 .topnav {
 background: rgb(242,246,248); /* Old browsers */

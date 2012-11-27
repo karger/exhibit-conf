@@ -213,22 +213,22 @@ ExhibitConf.exprSelector = function (props) {
         facets: {
             "ListFacet": {label: "List",
                           specs: {"expression": {type: "expr", 
-                                                 defaultValue: ""}}},
+                                                 defaultValue: ".label"}}},
             "CloudFacet": {label: "Tag Cloud",
                            specs: {"expression": {type: "expr", 
-                                                  defaultValue: ""}}},
+                                                  defaultValue: ".label"}}},
             "NumericRangeFacet": {label: "Numeric Range",
                                   specs: {"expression": {type: "expr", 
-                                                         defaultValue: ""}}},
+                                                         defaultValue: ".label"}}},
             "HierarchicalFacet": {label: "Hierarchical List",
                                   specs: {"expression": {type: "expr", 
-                                                         defaultValue: ""}}},
+                                                         defaultValue: ".label"}}},
             "TextSearchFacet": {label: "Text Search", 
                                 specs: {"expressions": {type: "expr", 
-                                                        defaultValue: ""}}},
+                                                        defaultValue: ".label"}}},
             "AlphaRangeFacet": {label: "Alphabetical Range",
                                 specs: {"expression": {type: "expr", 
-                                                       defaultValue: ""}}}
+                                                       defaultValue: ".label"}}}
         }
     }
 
@@ -705,12 +705,12 @@ ExhibitConf.exprSelector = function (props) {
     editWidget.children().wrap('<div/>'); //stacked layout
 
     EC.startEditPage = function(dom) {
-        markExhibit();
+        markExhibit(dom);
         //      $(EC.win.document.body)
         //          .wrapInner('<div class="exhibit-wrapper"></div>');
         dom.addClass('exhibit-editing');
         $('.exhibit-editable',dom).alohaBlock();
-        $('.exconf-no-id[id]').each(function () {
+        $('.exconf-no-id[id]',dom).each(function () {
             //AlohaBlock adds ids, which confuses exhibit
             //however, ids are needed for mahaloBlock
             $(this).attr('data-aloha-id',$(this).attr('id'))
@@ -733,7 +733,9 @@ ExhibitConf.exprSelector = function (props) {
         //better plan: alohaBlock once before editing begins
         //so rerendering doesn't happen here
         EC.rerender();
+//        dom.on('blur',function() {alert('blur'); return true;});
         dom.on('mouseover','.exhibit-editable', showEditWidget);
+        dom.on('blur',EC.saveRange);
     };
 
     EC.stopEditPage = function (dom) {
