@@ -92,38 +92,6 @@ ExhibitConf.Editor = {
         });
         return '<!DOCTYPE html>\n<html>\n' + dom.html() + '\n</html>';
     }
-
-    EE.bingSavePage = function(doc) {
-        var html = EE.exhibitToHtml(doc);
-        $.ajax({
-            type: "POST",
-            url: "http://wins2008.cloudapp.net/MyMovieCollection/Movies/StoreContentPage",
-            // content type sent to the server
-            // contentType: "application/json; charset=utf-8",
-            // data type back from the server
-            dataType: "text",
-            data: html,
-            crossDomain: true,
-            success: function (result) {
-                // "bing:8937a311-abe0-4f4e-9340-8f509799d67f" =>
-                // 8937a311-abe0-4f4e-9340-8f509799d67f
-                var id = result.replace(/"/g, "");
-                var guidId = id.substring(id.indexOf(':') + 1);
-
-                // Print out the access URL, to retrieve the page just
-                // stored.
-                // Example:
-                // http://localhost:57736/Movies/RetrieveContentPage/1d579352-ab8a-494c-821e-205507197eb5?callbackFunc=myCallbackFunc
-                var accessUrl = "Movies/RetrieveContentPage/" + guidId;
-                alert("http://wins2008.cloudapp.net/MyMovieCollection/" +
-                      accessUrl);
-            },
-            error: function (error) {
-                alert("There was an error posting the data to the server: "
-                      + error.responseText);
-            }   
-        });
-    };
     
     EE.saveAs = function(d) {
         //clone(true) to copy data as well.
@@ -310,8 +278,6 @@ ExhibitConf.Editor = {
                       {"new-button":  EE.newExhibit,
                        "open-button": EE.openFile,
                        "save-button": EE.saveAs,
-                       "bing-page-button": EE.bingSavePage,
-                       "bing-data-button": todo,
                        "preview-button": EE.stopEdit,
                        "edit-exhibit-button": EE.editPage,
                        "edit-lens-button": EE.editLens,
