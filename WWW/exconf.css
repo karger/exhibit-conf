@@ -19,21 +19,21 @@
 .lens-edit-lens-container {
     border: 2px solid black;
 }
-.lens-edit-lens-container [ex\:content]:after {
-    content: attr(ex\:content);
+.lens-edit-lens-container [data-ex-content]:after {
+    content: attr(data-ex-content);
 }
-.lens-edit-lens-container [ex\:content] {
+.lens-edit-lens-container [data-ex-content] {
 }
-.lens-edit-lens-container [ex\:content]:hover {
+.lens-edit-lens-container [data-ex-content]:hover {
     border: 2px solid red;
 }
-.lens-edit-lens-container [ex\:src-content]:after {
-    content: attr(ex\:src-content);
+.lens-edit-lens-container [data-ex-src-content]:after {
+    content: attr(data-ex-src-content);
 }
-.lens-edit-lens-container [ex\:src-content]:before {
-    content: attr(ex\:src-content);
+.lens-edit-lens-container [data-ex-src-content]:before {
+    content: attr(data-ex-src-content);
 }
-.lens-edit-lens-container [ex\:src-content]:hover {
+.lens-edit-lens-container [data-ex-src-content]:hover {
     border: 2px solid red;
 }
 
@@ -43,7 +43,7 @@ div.exhibit-toolboxWidget-popup {
 
 /* data editing */
 
-.exhibit-editing-data [ex\:content]:hover {
+.exhibit-editing-data [data-ex-content]:hover {
     border: 2px solid red;
 }
 

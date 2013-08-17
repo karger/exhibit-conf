@@ -103,17 +103,17 @@ ExhibitConf.Editor = {
     };
 
     EE.addViewPanel = function() {
-        EE.addComponent($('<div ex:role="viewPanel"></div>')
+        EE.addComponent($('<div data-ex-role="view-panel"></div>')
                         .attr( 'class','exhibit-editable'));
     };
 
     EE.addFacet = function() {
-        EE.addComponent($('<div ex:role="facet"></div>')
+        EE.addComponent($('<div data-ex-role="facet"></div>')
                         .attr( 'class','exhibit-editable'));
     };
 
     EE.addView = function() {
-        EE.addComponent($('<div ex:role="view"></div>')
+        EE.addComponent($('<div data-ex-role="view"></div>')
                         .attr( 'class','exhibit-editable'));
     };
     
@@ -157,7 +157,7 @@ ExhibitConf.Editor = {
     
     EE.lensEditor = {};
     EE.editLens = function() {
-        var lens = $('[ex\\:role="lens"]',EC.win.document)
+        var lens = $('[data-ex-role="lens"]',EC.win.document)
         , editContainer = EE.lensEditorTemplate.clone()
         , lensContainer = $('.lens-editor-lens-container',editContainer);
 
@@ -173,7 +173,7 @@ ExhibitConf.Editor = {
         EE.lensEditor = ExhibitConf.createLensEditor(lens, lensContainer);
 
         if (lens.length === 0) {
-            lens = $('<div ex:role="lens"></div>');
+            lens = $('<div data-ex-role="lens"></div>');
         }
         EE.bodyContainer.hide();
         $('.lens-insert-menu').show();

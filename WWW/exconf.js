@@ -53,15 +53,15 @@ ExhibitConf = {};
         dom = $(dom || EC.win.document);
         dom.find('.exhibit-controlPanel').remove();
         dom.find('.exhibit-toolboxWidget-popup').remove();
-        dom.find('[ex\\:role="facet"]').empty().removeClass('exhibit-facet');
-        dom.find('[ex\\:role="view"]')
+        dom.find('[data-ex-role="facet"]').empty().removeClass('exhibit-facet');
+        dom.find('[data-ex-role="view"]')
             .removeClass('exhibit-view')
             .children()
-            .not('[ex\\:role]')
+            .not('[data-ex-role]')
             .remove();
-        dom.find('[ex\\:role="viewPanel"]')
+        dom.find('[data-ex-role="viewPanel"]')
             .children()
-            .not('[ex\\:role]')
+            .not('[data-ex-role]')
             .remove();
         dom.find('.exconf-no-id').removeAttr('id');
     };
@@ -280,10 +280,10 @@ ExhibitConf.exprSelector = function (props) {
 
         if (elmt.attr(name) !== undefined) {
             return name;
-        } else if (elmt.attr("data-ex-" + name)) {
-            return "data-ex-" + name;
-        } else {
+        } else if (elmt.attr("ex:" + name)) {
             return "ex:" + name;
+        } else {
+            return "data-ex-" + name;
         } 
     }
 
@@ -492,14 +492,14 @@ ExhibitConf.exprSelector = function (props) {
             //reset to settings for new class
             specs = settingSpecs[comp][settings.className].specs;
             if (comp === 'facets') {
-                elt.attr('ex:facetClass',settings.className);
+                elt.attr('data-ex-facet-class',settings.className);
             } else if (comp === 'views') {
-                elt.attr('ex:viewClass',settings.className);
+                elt.attr('data-ex-view-class',settings.className);
             }
             delete settings.className; //so won't make an attribute
             for (field in specs) {
                 if (specs.hasOwnProperty(field)) {
-                    eField = nameAttribute(comp,field);
+                    eField = nameAttribute(elt, field);
                     if (typeof(settings[field]) === 'undefined'
                         || settings[field] === specs[field].defaultValue) {
                         elt.removeAttr(eField);
@@ -515,7 +515,7 @@ ExhibitConf.exprSelector = function (props) {
     EC.configureViewPanel = function(panel) {
         var 
         deferred = $.Deferred()
-        , views = panel.find('[ex\\:role="view"]')
+        , views = panel.find('[data-ex-role="view"]')
         , viewCount = views.length
         , whichView = $('<select class="initial-view"></select>')
         , viewList = $('<table class="view-list"/>')
@@ -551,8 +551,8 @@ ExhibitConf.exprSelector = function (props) {
         }
         , addView = function() {
             var view = $('<div/>',
-                {"ex:role": "view",
-                 "ex:viewClass": "TileView",
+                {"data-ex-role": "view",
+                 "data-ex-viewClass": "TileView",
                  "class": "exhibit-editable exconf-no-id"});
             viewList.append(makeViewEntry(view));
             setCount(++viewCount);
@@ -568,13 +568,13 @@ ExhibitConf.exprSelector = function (props) {
                 var jq = $(this)
                 , label = jq.find('input').val()
                 , view = jq.data('exconf-view');
-                $(view).attr('ex:label',label).appendTo(panel);
+                $(view).attr('data-ex-label',label).appendTo(panel);
                 //then put back those we're keeping (plus new)
             });
             if (whichView.val()) {
-                panel.attr('ex:initialView',whichView.val());
+                panel.attr('data-ex-initialView',whichView.val());
             } else {
-                panel.removeAttr('ex:initialView');
+                panel.removeAttr('data-ex-initialView');
             }
             deferred.resolve();
         };
@@ -632,21 +632,21 @@ ExhibitConf.exprSelector = function (props) {
 
     , markExhibit = function(dom) {
         dom = $(dom || EC.win.document.body);
-        $('[ex\\:role="view"]',dom).addClass('exhibit-editable');
-        $('[ex\\:role="facet"]',dom).addClass('exhibit-editable');
-        $('[ex\\:role="viewPanel"]',dom).addClass('exhibit-editable');
+        $('[data-ex-role="view"]',dom).addClass('exhibit-editable');
+        $('[data-ex-role="facet"]',dom).addClass('exhibit-editable');
+        $('[data-ex-role="viewPanel"]',dom).addClass('exhibit-editable');
         //weird things happen if ids get added after rendering
         //unfortunately, aloha sometimes does that.
         //preclude by arranging to remove them
-        $('[ex\\:role]',dom).filter(':not([id])').addClass('exconf-no-id');
+        $('[data-ex-role]',dom).filter(':not([id])').addClass('exconf-no-id');
     }
 
     , unMarkExhibit = function(dom) {
         dom = $(dom || EC.win.document.body);
-        $('[ex\\:role="view"]',dom).removeClass('exhibit-editable');
-        $('[ex\\:role="facet"]',dom).removeClass('exhibit-editable');
-        $('[ex\\:role="viewPanel"]',dom).removeClass('exhibit-editable');
-        $('[ex\\:role]',dom).removeClass('exconf-no-id');
+        $('[data-ex-role="view"]',dom).removeClass('exhibit-editable');
+        $('[data-ex-role="facet"]',dom).removeClass('exhibit-editable');
+        $('[data-ex-role="viewanel"]',dom).removeClass('exhibit-editable');
+        $('[data-ex-role]',dom).removeClass('exconf-no-id');
     }
 
     , handleEditClick = function(event) {
@@ -664,6 +664,8 @@ ExhibitConf.exprSelector = function (props) {
                     f.dispose();
                 }
             }
+            //sledgehammer to clear caching of elt.data()
+            elt.replaceWith(elt.clone());
             EC.rerender();
         });
     }
@@ -929,7 +931,7 @@ ExhibitConf.createLensEditor = function(lens, lensContainer) {
         dialog = $('<div><div>Property to use:</div></div>'),
         selector = EC.exprSelector(props);
 
-        attr = attr || 'ex:content';
+        attr = attr || 'data-ex-content';
 
         if (content.attr(attr)) {
             selector.val(content.attr(attr));
@@ -966,15 +968,15 @@ ExhibitConf.createLensEditor = function(lens, lensContainer) {
 
     editor.addAnchor = function() {
         var node = $('<a/>').text('new link');
-        addNode(node,'ex:href-content');
+        addNode(node,'data-ex-href-content');
     };
 
     editor.addImg = function() {
-        addNode($('<img/>'),'ex:src-content');
+        addNode($('<img/>'),'data-ex-src-content');
     };
 
     editor.addText = function() {
-        addNode($('<span/>'),'ex:content');
+        addNode($('<span/>'),'data-ex-content');
     };
 
     editor.stopEdit = function() {
@@ -989,11 +991,11 @@ ExhibitConf.createLensEditor = function(lens, lensContainer) {
         .contents().clone()
         .appendTo(alohaEditor.empty());
     alohaEditor.aloha();
-    alohaEditor.on('click','[ex\\:content]',function() {
+    alohaEditor.on('click','[data-ex-content]',function() {
         editContent($(this));
     });
-    alohaEditor.on('click','img[ex\\:src-content]',function() {
-        editContent($(this),'ex:src-content');
+    alohaEditor.on('click','img[data-ex-src-content]',function() {
+        editContent($(this),'data-ex-src-content');
     });
 
     return editor;
@@ -1009,11 +1011,11 @@ ExhibitConf.startEditData = function() {
         , original = node.contents()
 
         //parsing content attribute
-        , content = node.attr('ex:content')
+        , content = node.attr('data-ex-content')
         , expr = Exhibit.ExpressionParser.parse(content)
         
         //identify item being edited
-        , id = node.parents('[ex\\:itemId]').attr('ex:itemId')
+        , id = node.parents('[data-ex-itemId]').attr('data-ex-itemId')
         , database = EC.win.database
 
         //current value of attribute
@@ -1080,11 +1082,11 @@ ExhibitConf.startEditData = function() {
 
     $('body',EC.win.document)
         .addClass('exhibit-editing-data')
-        .on('click.exconf','[ex\\:content]',beginEdit);
+        .on('click.exconf','[data-ex-content]',beginEdit);
 };
 
 ExhibitConf.stopEditData = function() {
     $('body',ExhibitConf.win.document)
         .removeClass('exhibit-editing-data')
-        .off('click.exconf','[ex\\:content]');
+        .off('click.exconf','[data-ex-content]');
 };
