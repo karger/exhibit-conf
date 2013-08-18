@@ -183,6 +183,35 @@ ExhibitConf.exprSelector = function (props) {
     return container;
 };
 
+ExhibitConf.upgradeExhibit = function(dom) {
+    $('*',dom).each(function () {
+        var jq = $(this)
+        , name, i
+        , update = [];
+
+        for (i=0; i < this.attributes.length; i++) {
+            name = this.attributes.item(i).name;
+            if (name.slice(0,3)==='ex:') {
+                update.push({ name: name,
+                            value: this.attributes.item(i).value});
+            }
+        }
+        for (i=0; i < update.length; i++) {
+            jq.removeAttr(update[i].name);
+            name = "data-ex-" +
+            update[i].name
+            .substr(3)
+            .replace(/([A-Z])/g,"-$1")
+            .toLowerCase();
+            jq.attr(name, update[i].value);
+        }
+
+        return true;
+    });
+    return dom;
+};
+
+
 /* Widget configurator */
 (function () {
     var EC = ExhibitConf

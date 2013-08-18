@@ -98,8 +98,13 @@ ExhibitConf.Editor = {
         var html = EE.exhibitToHtml()
             .replace(/(<\/[a-z]*>)/g,'$1\n')  // 'prett print'
         , uri = "data:application/octet-stream;charset=utf-8,"
-            + encodeURIComponent('<html>'+html+'</html>');
-        window.open(uri,"_blank");
+            + encodeURIComponent('<html>'+html+'</html>')
+        , anchor = $('<a></a>')
+        .attr('href',uri)
+        .attr('download','exhibit.html');
+        $('body').append(anchor); //if not in dom, click fails
+        anchor.get(0).click(); //jquery click doesn't trigger nav. action
+        anchor.remove();
     };
 
     EE.addViewPanel = function() {
@@ -218,6 +223,11 @@ ExhibitConf.Editor = {
             }
         });
 
+        if ($('[ex\\:role]',doc).length > 0) {
+            alert("upgrading from exhibit 2 syntax (ex:) to exhibit 3 (data-ex-)");
+            ExhibitConf.upgradeExhibit(doc);
+        }
+        
         //can't move elements between docs so must detach first.
         EE.bodyContainer.empty()
             .prepend($('body',doc).detach().contents());
