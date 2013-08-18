@@ -40,8 +40,10 @@ ExhibitConf = {};
 
     EC.restoreRange = function() {
         var range = EC.getRange();
-        window.getSelection().removeAllRanges();
-        window.getSelection().addRange(range);
+        if (range) {
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
+        }
     };
 }());
 
@@ -121,6 +123,37 @@ ExhibitConf = {};
             reader.readAsText(file);
         });
         input.click();
+        return deferred.promise();
+    };
+
+    EC.openUrl = function() {
+        var dialog = $('<div>Enter URL' +
+                       '<div><input type="text" width=60 id="exconf-url">' +
+                       '</input></div>')
+        , deferred = $.Deferred()
+        , open = function() {
+            dialog.dialog('close');
+            fetch = $.ajax($('#exconf-url',dialog).val(),
+                           {dataType: "text"});
+            fetch.done(function (data) {
+                deferred.resolve(data);
+            });
+        }
+        
+        dialog.dialog({
+            "zIndex": 10101, //cover aloha toolbar
+            "buttons": {
+                "Open": open,
+                "Cancel": function () {
+                    dialog.dialog('close');
+                    deferred.reject();
+                }
+            },
+            "modal": true, 
+            "title": "Choose URL",
+            "width": "550"
+        });
+
         return deferred.promise();
     };
 

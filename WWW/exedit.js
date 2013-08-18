@@ -71,6 +71,10 @@ ExhibitConf.Editor = {
         EC.open().done(EE.beginEdit);
     };
 
+    EE.openUrlDialog = function () {
+        EC.openUrl().done(EE.beginEdit);
+    };
+
     EE.openUrl = function(url) {
         $.ajax(url, {dataType:"text"}).done(EE.beginEdit);
     };
@@ -287,6 +291,7 @@ ExhibitConf.Editor = {
         configureMenuBar(menu, 
                       {"new-button":  EE.newExhibit,
                        "open-button": EE.openFile,
+                       "open-url-button": EE.openUrlDialog,
                        "save-button": EE.saveAs,
                        "preview-button": EE.stopEdit,
                        "edit-exhibit-button": EE.editPage,
