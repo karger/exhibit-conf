@@ -1079,9 +1079,10 @@ ExhibitConf.startEditData = function() {
         //parsing content attribute
         , content = node.attr('data-ex-content')
         , expr = Exhibit.ExpressionParser.parse(content)
+        , idAttr = Exhibit.makeExhibitAttribute('itemID')
         
         //identify item being edited
-        , id = node.parents('[data-ex-itemId]').attr('data-ex-itemId')
+        , id = node.parents('[' + idAttr + ']').attr(idAttr)
         , database = EC.win.database
 
         //current value of attribute
