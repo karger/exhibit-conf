@@ -4,8 +4,7 @@
     <meta charset="UTF-8">    
     <title>New Exhibit</title>
     <link href="nobelists.js" type="application/json" rel="exhibit-data" />
-    <script src="http://people.csail.mit.edu/karger/Exhibit3/api/exhibit-api.js?autoCreate=true"
-	    type="text/javascript"></script>
+    <script src="http://people.csail.mit.edu/karger/Exhibit3/api/exhibit-api.js"></script>
     <link rel="exhibit-extension" href="http://people.csail.mit.edu/karger/Exhibit3/api/extensions/time/time-extension.js"></script>
   </head>
   <body>
@@ -21,7 +20,7 @@ types of visualizations such as lists, thumbnail grids, and timelines.
 present collections of items.  <b>Facets</b> are widgets that
 filter the collection of items presented in a view.
 And <b>Lenses</b> are templates that describe how individual
-items should be presented&emdash;which properties of the item should
+items should be presented&mdash;which properties of the item should
 be shown, with what layout and formatting.  There's one more common
 optional element: a <b>view panel</b> that can hold multiple
 view among which the reader can switch to see one at a time.
@@ -31,7 +30,7 @@ winners.  You are looking at a view panel that offers two views; the
 currently-visible <b>Tile</b> view that lists items vertically
 and a <b>Thumbnail</b> that lays out items in a grid (often used
 for photographs).  You can switch between views by clicking on the
-view titles&emdash;TILES and THUMBNAILS&emdash;above the view.
+view titles&mdash;TILES and THUMBNAILS&mdash;above the view.
 
 <p>On the right side is a <b>list facet</b> for filtering the winners
 according to their year of winning.  You can use this facet to select
@@ -45,20 +44,20 @@ winning, and a photograph.
 the exhibit.  You can also just select File&gt;New to discard this
 tutorial exhibit and start with a blank slate.
 
-      <div ex:role="lens">
+      <div data-ex-role="lens">
             <table class="nobelist"><tr>
-                <td><img ex:src-content=".imageURL" /></td>
+                <td><img data-ex-src-content=".imageURL" /></td>
                 <td>
-                  <div ex:content=".label" class="name"></div>
+                  <div data-ex-content=".label" class="name"></div>
                   <div>
-                    <span ex:content=".discipline"
+                    <span data-ex-content=".discipline"
                     class="discipline"></span>, 
-                    <i ex:content=".nobel-year"></i>
+                    <i data-ex-content=".nobel-year"></i>
                   </div>
-                  <div ex:if-exists=".co-winner" class="co-winners">
-                    Co-winners: <span ex:content=".co-winner"></span>
+                  <div data-ex-if-exists=".co-winner" class="co-winners">
+                    Co-winners: <span data-ex-content=".co-winner"></span>
                   </div>
-                  <div ex:content=".relationship-detail"
+                  <div data-ex-content=".relationship-detail"
                   class="relationship"></div>
                 </td>
             </tr></table>
@@ -66,21 +65,21 @@ tutorial exhibit and start with a blank slate.
       <table style="width:100%">
 	<tr>
 	  <td>
-	    <div class="main-panel" ex:role="viewPanel"
+	    <div class="main-panel" data-ex-role="viewPanel"
 	    style="min-width: 400px">
-	      <div ex:role="view" ex:viewclass="Tile"></div>
-	      <div ex:role="view"
-		   ex:viewClass="Thumbnail"
-		   ex:showAll="true"
-		   ex:orders=".discipline"
-		   ex:possibleOrders=".label, .last-name, .discipline,
+	      <div data-ex-role="view" data-ex-view-class="Tile"></div>
+	      <div data-ex-role="view"
+		   data-ex-view-class="Thumbnail"
+		   data-ex-show-all="true"
+		   data-ex-orders=".discipline"
+		   data-ex-possible-orders=".label, .last-name, .discipline,
 				      .relationship, .shared, .deceased, .nobel-year">
 	      </div>
 	    </div>
 	  </td>
 	  <td class="facet-panel"  
 	      style="max-width: 300px;min-width:200px;vertical-align: top">
-	      <div ex:role="facet" ex:expression=".nobel-year"></div>
+	      <div data-ex-role="facet" data-ex-expression=".nobel-year"></div>
 	  </td>
 	</tr>
       </table>

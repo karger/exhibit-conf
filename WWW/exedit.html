@@ -12,8 +12,7 @@
 
     <!-- Aloha -->
     <script  src="http://cdn.aloha-editor.org/latest/lib/require.js"></script>
-    <script  >
-    //aloha loading own copies tends to break exhibit
+    <script>
       define('jquery', function() {return window.jQuery;});
       define('jqueryui', function() {return window.jQuery.ui;});
       Aloha = {settings: {}};
@@ -21,11 +20,11 @@
       Aloha.settings.sidebar = {disabled: true};
 
       Aloha.settings.plugins = {
-          block: {dragdrop: true },
+          block: {dragdrop: true},
           format: {config: [ 'b', 'i', 'p', 'sub', 'sup', 'del',
               'title', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'pre',
-              'removeFormat' ]
-      }};
+              'removeFormat' ]}
+      };      
 
       Aloha.settings.toolbar = {
           tabs: [
@@ -34,7 +33,6 @@
                  }
 	  ],
       };
-
     </script>
     <script src="http://cdn.aloha-editor.org/latest/lib/aloha-bare.js"
 	    data-aloha-plugins="common/align,common/block,common/commands,common/format,common/image,common/link,common/paste,common/table,common/undo,common/list"></script>
