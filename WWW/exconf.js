@@ -448,37 +448,41 @@ ExhibitConf.upgradeExhibit = function(dom) {
 
     //create a dialog that destructively modifies exhibit component settings
     , settingsDialog = function(comp, title, settings) {
-        var className,
+        var className, link, i=0, activeIndex = false,
         deferred = $.Deferred(),
         //dummy tab is a hack due to tabs oddness: select event is not called
-        //on initial (selected) tab, which prevents it initializing properly
-        parts = $('<div><ul><li><a href="#dummy">dummy</a></li></ul><div id="dummy"></div></div>'),
-        dialog = $('<div></div>').append(parts);
-
-        parts.tabs({
-            'add': function(event, ui) {
-                $(ui.tab).data("class-name",className);
-                return true;
-            }});
+        //on initial (selected) tab, which prevents it initializing
+        //properly
+        dialog = $('<div></div>'),
+        parts = $('<div><div id="dialog-panel"></div></div>').appendTo(dialog),
+        tabs = $('<ul></ul>').prependTo(parts);
 
         for (className in settingSpecs[comp]) {
             if (settingSpecs[comp].hasOwnProperty(className)) {
-                parts.tabs("add", '#' + comp + '-' + className,
-                           settingSpecs[comp][className].label);
+                $('<a href="#dialog-panel"></a>')
+                    .text(className)
+                    .wrap('<li></li>')
+                    .parent()
+                    .data('class-name',className)
+                    .appendTo(tabs);
+                if (className === settings.className) {
+                    activeIndex = i;
+                }
+                i++;
             }
         }
 
-        parts.tabs({'select': function(event, ui) {
-            settings.className = $(ui.tab).data("class-name");
-            $(ui.panel).empty()
+        parts.tabs({'beforeActivate': function(event, ui) {
+            settings.className = $(ui.newTab).data("class-name");
+            $(ui.newPanel).empty()
                 .append(
                     makeSettingsTable(settingSpecs[comp][settings.className].specs,
                                       settings));
             return true;
         }});
-        
-        parts.tabs('select','#' + comp + '-' + settings.className);
-        parts.tabs('remove',0); //remove dummy tab once all else initialized
+            
+        parts.tabs('option','active',activeIndex-1); //to ensure initial
+        parts.tabs('option','active',activeIndex); //activate event fires
         dialog.dialog({
             "zIndex": 10101, //cover aloha toolbar
             "buttons": {
