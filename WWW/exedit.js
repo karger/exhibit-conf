@@ -263,13 +263,25 @@ ExhibitConf.Editor = {
                 $this.attr('src', url+src);
             }
         });
+        $('[href]',dom).each(function() {
+            var $this = $(this)
+            , src = $this.attr('href');
+            if (src[0]==="#") {
+                $(this).attr('data-ex-original-href',src);
+                $this.attr('href', url+src);
+            }
+        });
     };
 
     EE.unresolveURLs = function(dom) {
         dom = dom || document;
-        $('[data-ex-original-source]',dom).each(function () {
+        $('[data-ex-original-src]',dom).each(function () {
             $(this).attr('src',$(this).attr('data-ex-original-src'))
                 .removeAttr('data-ex-original-src');
+        });
+        $('[data-ex-original-href]',dom).each(function () {
+            $(this).attr('src',$(this).attr('data-ex-original-href'))
+                .removeAttr('data-ex-original-href');
         });
     };
 
@@ -388,6 +400,7 @@ ExhibitConf.Editor = {
                                  {dataType: "text"})
         ;
 
+        EC.init();
         EE.init();
 
         fetchTemplate.done(function(page) {EE.template = page;})

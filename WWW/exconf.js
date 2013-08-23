@@ -227,35 +227,6 @@ ExhibitConf.exprSelector = function (props) {
     return container;
 };
 
-ExhibitConf.upgradeExhibit = function(dom) {
-    $('*',dom).each(function () {
-        var jq = $(this)
-        , name, i
-        , update = [];
-
-        for (i=0; i < this.attributes.length; i++) {
-            name = this.attributes.item(i).name;
-            if (name.slice(0,3)==='ex:') {
-                update.push({ name: name,
-                            value: this.attributes.item(i).value})
-            }
-        }
-        for (i=0; i < update.length; i++) {
-            jq.removeAttr(update[i].name);
-            name = "data-ex-" +
-            update[i].name
-            .substr(3)
-            //attributes lose case sensitivity, but fix viewclass/facetclass
-            .replace(/class$/g,"-Class")
-            .toLowerCase();
-            jq.attr(name, update[i].value);
-        }
-
-        return true;
-    });
-    return dom;
-};
-
 
 /* Widget configurator */
 (function () {
@@ -335,7 +306,7 @@ ExhibitConf.upgradeExhibit = function(dom) {
             if (comp.superclassName === "OrderedViewFrame") {
                 //hack for subclassed views!
                 $.extend(true, comp.specs, 
-                              EC.win.Exhibit.OrderedViewFrame._settingSpecs);
+                              Exhibit.OrderedViewFrame._settingSpecs);
             }
         };
 
@@ -343,7 +314,7 @@ ExhibitConf.upgradeExhibit = function(dom) {
             if (settingSpecs.views.hasOwnProperty(className)) {
                 configureOne(settingSpecs.views[className],
                              className,
-                             EC.win.Exhibit.UI.viewClassNameToViewClass);
+                             Exhibit.UI.viewClassNameToViewClass);
             }
         }              
 
@@ -351,7 +322,7 @@ ExhibitConf.upgradeExhibit = function(dom) {
             if (settingSpecs.facets.hasOwnProperty(className)) {
                 configureOne(settingSpecs.facets[className],
                              className,
-                             EC.win.Exhibit.UI.facetClassNameToFacetClass);
+                             Exhibit.UI.facetClassNameToFacetClass);
             }
         }
     }
@@ -562,7 +533,9 @@ ExhibitConf.upgradeExhibit = function(dom) {
         }
         EC.win.Exhibit.SettingsUtilities.collectSettingsFromDOM(elt, cleanSpecs, settings);
 
-        settings.className = className;
+        if (className) {
+            settings.className = className;
+        }
         promise = settingsDialog(comp, title, settings);
 
         promise.done(function () {
@@ -690,6 +663,90 @@ ExhibitConf.upgradeExhibit = function(dom) {
 
         return deferred.promise();
     };
+
+    EC.upgradeExhibit = function(dom) {
+        $('[ex\\:role]',dom).each(function() {
+            var className, attr, $this = $(this),
+            role = $this.attr('ex:role');
+            $this.removeAttr('ex:role').attr('data-ex-role',role);
+            switch(role) {
+            case "view": 
+                comp = "views";
+                className = $this.attr('ex:viewClass');
+                if (className) {
+                    $this.attr('data-ex-view-class',className)
+                    .removeAttr('ex:viewClass');
+                    }
+                className = className || "TileView";
+                if (!className.endsWith("View")) {
+                    className += "View";
+                }
+                
+                break;
+            case "facet":
+                comp = "facets";
+                className = $this.attr("ex:facetClass");
+                if (className) {
+                    $this.attr('data-ex-facet-class',className)
+                    .removeAttr('ex:facetClass');
+                    }
+                className = className || "ListFacet";
+                if (!className.endsWith("Facet")) {
+                    className += "Facet";
+                }
+                break;
+            }
+            if (className) {
+                specs = settingSpecs[comp][className].specs;
+                for (field in specs) {
+                    if (specs.hasOwnProperty(field)) {
+                        if (specs[field].name) {
+                            field = specs[field].name;
+                        }
+                        attr = $this.attr('ex:'+field);
+                        if ((typeof attr !== "undefined") && (attr !== null))
+                        {
+                            $this.removeAttr('ex:'+field);
+                            $this.attr('data-ex-' 
+                                       + field.replace(/([A-Z])/g,"-$1")
+                                       .toLowerCase(),
+                                       attr);
+                        }
+                    }
+                }
+            }
+        });
+        $('*',dom).each(function () {
+            var jq = $(this)
+            , name, i
+            , update = [];
+
+            for (i=0; i < this.attributes.length; i++) {
+                name = this.attributes.item(i).name;
+                if (name.slice(0,3)==='ex:') {
+                    update.push({ name: name,
+                                  value: this.attributes.item(i).value});
+                }
+            }
+            for (i=0; i < update.length; i++) {
+                jq.removeAttr(update[i].name);
+                name = "data-ex-" +
+                    update[i].name
+                    .substr(3)
+                    .replace(/([A-Z])/g,"-$1")
+                    .toLowerCase();
+                jq.attr(name, update[i].value);
+            }
+
+            return true;
+        });
+        return dom;
+    };
+
+    EC.init = function () {
+        configureSettingSpecs();
+    };
+
 }());
 
 /* page editor */
