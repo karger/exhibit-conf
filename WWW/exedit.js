@@ -71,12 +71,8 @@ ExhibitConf.Editor = {
         EC.open().done(EE.beginEdit);
     };
 
-    EE.openUrlDialog = function () {
-        EC.openUrl().done(EE.beginEdit);
-    };
-
-    EE.openUrl = function(url) {
-        $.ajax(url, {dataType:"text"}).done(EE.beginEdit);
+    EE.openUrl = function (url) {
+        EC.openUrl(url).done(EE.beginEdit);
     };
 
     EE.exhibitToHtml = function (doc) {
@@ -100,7 +96,7 @@ ExhibitConf.Editor = {
     EE.saveAs = function(d) {
         //clone(true) to copy data as well.
         var html = EE.exhibitToHtml()
-            .replace(/(<\/[a-z]*>)/g,'$1\n')  // 'prett print'
+            .replace(/(<\/[a-z]*>)/g,'$1\n')  // 'pretty print'
         , uri = "data:application/octet-stream;charset=utf-8,"
             + encodeURIComponent('<html>'+html+'</html>')
         , anchor = $('<a></a>')
@@ -228,7 +224,9 @@ ExhibitConf.Editor = {
         });
 
         if ($('[ex\\:role]',doc).length > 0) {
-            alert("upgrading from exhibit 2 syntax (ex:) to exhibit 3 (data-ex-)");
+            alert("upgrading from exhibit 2 syntax (ex:) to exhibit 3"
+                  +
+                  "(data-ex-).  This will probably lose some information");
             ExhibitConf.upgradeExhibit(doc);
         }
         
@@ -241,15 +239,48 @@ ExhibitConf.Editor = {
     };
 
     EE.newExhibit = function() {
-        EE.openUrl("blank.html");
+        EE.beginEdit(EE.template);
     };
 
     EE.tutorial = function() {
         window.open("http://people.csail.mit.edu/karger/EConf/exedit.html?page=tutorial.html");
     };
 
-    EE.beginEdit = function(data) {
-        EE.insertDoc(data);
+    EE.resolveURLs = function(url, dom) {
+        //exedit runs the exhibit from a different url than the
+        //exhibit being edited.  So, we need to rewrite relative #foo urls
+        //TODO: revise to account for possible presence of <base href> tag
+        var hash = url.indexOf(hash);
+        dom = dom || document;
+        if (hash > 0) {
+            url = url.substring(0,hash);
+        }
+        $('[src]',dom).each(function() {
+            var $this = $(this)
+            , src = $this.attr('src');
+            if (src[0]==="#") {
+                $(this).attr('data-ex-original-src',src);
+                $this.attr('src', url+src);
+            }
+        });
+    };
+
+    EE.unresolveURLs = function(dom) {
+        dom = dom || document;
+        $('[data-ex-original-source]',dom).each(function () {
+            $(this).attr('src',$(this).attr('data-ex-original-src'))
+                .removeAttr('data-ex-original-src');
+        });
+    };
+
+    EE.beginEdit = function(page, url, data, type) {
+        EE.insertDoc(page);
+        if (url) {
+            EE.resolveURLs(url);
+        }
+        if (data) {
+            setDataLink(data, type);
+        }
         EE.activate();
         ExhibitConf.reinit();
     };
@@ -287,11 +318,11 @@ ExhibitConf.Editor = {
 
     EE.activate = function() {
         var menu = EE.menu.clone()
-        , spacer=$('<div class="exedit"></div>');
+        , spacer=$('<div id="exedit-spacer" class="exedit"></div>');
         configureMenuBar(menu, 
-                      {"new-button":  EE.newExhibit,
+                      {"new-button": EE.newExhibit,
                        "open-button": EE.openFile,
-                       "open-url-button": EE.openUrlDialog,
+                       "open-url-button": EE.openUrl,
                        "save-button": EE.saveAs,
                        "preview-button": EE.stopEdit,
                        "edit-exhibit-button": EE.editPage,
@@ -313,11 +344,14 @@ ExhibitConf.Editor = {
         $('.page-insert-menu',menu).hide();
         EE.headStuff.appendTo(EC.win.document.head);
         menu.prependTo(EC.win.document.body);
+        $('#exedit-spacer').remove(); //any old one
         spacer.height(menu.height()).insertAfter(menu);
     };
 
     $(document).on("scriptsLoaded.exhibit",function() {
-        var parseUrlArgs = function() {
+        var exhibitUrl
+
+        , parseUrlArgs = function() {
             var args = window.location.search.substr(1).split('&')
             , i, arg, split, key, val, result={};
 
@@ -349,19 +383,27 @@ ExhibitConf.Editor = {
                 $('head',ExhibitConf.win).append(newLink);
             }
         }
-        , urlArgs = parseUrlArgs();
+        , urlArgs = parseUrlArgs()
+        , fetchTemplate = $.ajax("blank.html", 
+                                 {dataType: "text"})
+        ;
 
         EE.init();
 
-        $.ajax(urlArgs.page || "blank.html", {dataType: "text"})
-            .done(function(data) {
-                EE.insertDoc(data);
-                if (urlArgs.data) {
-                    setDataLink(urlArgs.data, urlArgs.type);
-                }
-                EE.activate();
-                ExhibitConf.reinit();
-            })
+        fetchTemplate.done(function(page) {EE.template = page;})
+            .fail(function() {
+                EE.template="<html><head></head><body>Edit this.</body>";
+            });
+
+        if (urlArgs.page) {
+            fetchPage = $.ajax(urlArgs.page, {dataType: "text"});
+        } else {
+            fetchPage = fetchTemplate;
+        }
+                     
+        fetchPage.done(function(page) {
+            EE.beginEdit(page, urlArgs.page, urlArgs.data, urlArgs.type);
+        })
             .fail(function() {
                 alert("Failed to load " + (urlArgs.page || 
                                            "new document template"));

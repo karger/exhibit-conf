@@ -126,35 +126,46 @@ ExhibitConf = {};
         return deferred.promise();
     };
 
-    EC.openUrl = function() {
-        var dialog = $('<div>Enter URL' +
+    EC.openUrl = function(url) {
+        var dialog
+        , page = $.Deferred()
+        , fetch = function(url) {
+            $.ajax(url, {dataType: "text"})
+                .done(function (result) {
+                    page.resolve(result);
+                })
+                .fail(function() {
+                    alert("error opening " + url);
+                })
+        }
+
+        if (!url) {
+            url = $.Deferred();
+            dialog = $('<div>Enter URL' +
                        '<div><input type="text" width=60 id="exconf-url">' +
-                       '</input></div>')
-        , deferred = $.Deferred()
-        , open = function() {
-            dialog.dialog('close');
-            fetch = $.ajax($('#exconf-url',dialog).val(),
-                           {dataType: "text"});
-            fetch.done(function (data) {
-                deferred.resolve(data);
+                       '</input></div>');
+
+            dialog.dialog({
+                "zIndex": 10101, //cover aloha toolbar
+                "buttons": {
+                    "Open": function () {
+                        $(this).dialog('destroy');
+                        url.resolve($('#exconf-url',this).val());
+                    },
+                    "Cancel": function () {
+                        $(this).dialog('destroy');
+                        url.reject();
+                    }
+                },
+                "modal": true, 
+                "title": "Choose URL",
+                "width": "550"
             });
         }
         
-        dialog.dialog({
-            "zIndex": 10101, //cover aloha toolbar
-            "buttons": {
-                "Open": open,
-                "Cancel": function () {
-                    dialog.dialog('close');
-                    deferred.reject();
-                }
-            },
-            "modal": true, 
-            "title": "Choose URL",
-            "width": "550"
-        });
+        $.when(url).done(fetch);
 
-        return deferred.promise();
+        return $.when(page, url).promise();
     };
 
     EC.saveHtml = function(html) {
@@ -226,7 +237,7 @@ ExhibitConf.upgradeExhibit = function(dom) {
             name = this.attributes.item(i).name;
             if (name.slice(0,3)==='ex:') {
                 update.push({ name: name,
-                            value: this.attributes.item(i).value});
+                            value: this.attributes.item(i).value})
             }
         }
         for (i=0; i < update.length; i++) {
@@ -234,7 +245,8 @@ ExhibitConf.upgradeExhibit = function(dom) {
             name = "data-ex-" +
             update[i].name
             .substr(3)
-            .replace(/([A-Z])/g,"-$1")
+            //attributes lose case sensitivity, but fix viewclass/facetclass
+            .replace(/class$/g,"-Class")
             .toLowerCase();
             jq.attr(name, update[i].value);
         }
@@ -268,6 +280,13 @@ ExhibitConf.upgradeExhibit = function(dom) {
                     "iconKey": {type: "expr"},
                     "eventLabel": {type: "expr"},
                     "caption": {type: "text"}
+                },
+            },
+            "MapView": {
+                specs: {
+                    "latlng": {type: "expr"},
+                    "colorKey": {type: "expr"},
+                    "iconKey": {type: "expr"}
                 }
             }
         },
@@ -450,9 +469,6 @@ ExhibitConf.upgradeExhibit = function(dom) {
     , settingsDialog = function(comp, title, settings) {
         var className, link, i=0, activeIndex = false,
         deferred = $.Deferred(),
-        //dummy tab is a hack due to tabs oddness: select event is not called
-        //on initial (selected) tab, which prevents it initializing
-        //properly
         dialog = $('<div></div>'),
         parts = $('<div><div id="dialog-panel"></div></div>').appendTo(dialog),
         tabs = $('<ul></ul>').prependTo(parts);
