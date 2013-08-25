@@ -298,6 +298,12 @@ ExhibitConf.Editor = {
     };
 
     EE.init = function() {
+        $('link.exedit').each(function() {
+                //resolve stylesheet urls against exedit code base
+                $(this).attr('href',
+                             Exhibit.Persistence.resolveURL($(this).attr('href')));
+            });
+        $('#exhibit-conf-code-base').remove();
         EE.menu = $('#exedit-menu').detach().show();
         EE.bodyContainer = $('#page-container');
         EE.lensEditorTemplate = $('#lens-editor-template').detach()

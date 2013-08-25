@@ -265,22 +265,28 @@ ExhibitConf.exprSelector = function (props) {
         facets: {
             "ListFacet": {label: "List",
                           specs: {"expression": {type: "expr", 
-                                                 defaultValue: ".label"}}},
+                                                 defaultValue: ".label"},
+                                  "facetLabel": {type: "text"}}},
             "CloudFacet": {label: "Tag Cloud",
                            specs: {"expression": {type: "expr", 
-                                                  defaultValue: ".label"}}},
+                                                  defaultValue: ".label"},
+                                   "facetLabel": {type: "text"}}},
             "NumericRangeFacet": {label: "Numeric Range",
                                   specs: {"expression": {type: "expr", 
-                                                         defaultValue: ".label"}}},
+                                                         defaultValue: ".label"},
+                                          "facetLabel": {type: "text"}}},
             "HierarchicalFacet": {label: "Hierarchical List",
                                   specs: {"expression": {type: "expr", 
-                                                         defaultValue: ".label"}}},
+                                                         defaultValue: ".label"},
+                                          "facetLabel": {type: "text"}}},
             "TextSearchFacet": {label: "Text Search", 
                                 specs: {"expressions": {type: "expr", 
-                                                        defaultValue: ".label"}}},
+                                                        defaultValue: ".label"},
+                                        "facetLabel": {type: "text"}}},
             "AlphaRangeFacet": {label: "Alphabetical Range",
                                 specs: {"expression": {type: "expr", 
-                                                       defaultValue: ".label"}}}
+                                                       defaultValue: ".label"},
+                                        "facetLabel": {type: "text"}}}
         }
     }
 
@@ -880,6 +886,7 @@ ExhibitConf.exprSelector = function (props) {
     };
 
     EC.stopEditPage = function (dom) {
+        EC.unrender(); //otherwise mahalo() gets confused
         dom.removeClass('exhibit-editing')
             .off('mouseover','.exhibit-editable',showEditWidget);
         deleteButton.off('click.exconf');
