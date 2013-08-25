@@ -246,7 +246,7 @@ ExhibitConf.Editor = {
         window.open("http://people.csail.mit.edu/karger/EConf/exedit.html?page=tutorial.html");
     };
 
-    EE.resolveURLs = function(url, dom) {
+    EE.resolveHashes = function(url, dom) {
         //exedit runs the exhibit from a different url than the
         //exhibit being edited.  So, we need to rewrite relative #foo urls
         //TODO: revise to account for possible presence of <base href> tag
@@ -273,7 +273,7 @@ ExhibitConf.Editor = {
         });
     };
 
-    EE.unresolveURLs = function(dom) {
+    EE.unresolveHashes = function(dom) {
         dom = dom || document;
         $('[data-ex-original-src]',dom).each(function () {
             $(this).attr('src',$(this).attr('data-ex-original-src'))
@@ -288,7 +288,7 @@ ExhibitConf.Editor = {
     EE.beginEdit = function(page, url, data, type) {
         EE.insertDoc(page);
         if (url) {
-            EE.resolveURLs(url);
+            EE.resolveHashes(url);
         }
         if (data) {
             setDataLink(data, type);
@@ -298,12 +298,14 @@ ExhibitConf.Editor = {
     };
 
     EE.init = function() {
-        $('link.exedit').each(function() {
-                //resolve stylesheet urls against exedit code base
-                $(this).attr('href',
-                             Exhibit.Persistence.resolveURL($(this).attr('href')));
+        //convert script links to absolute urls, then remove base href
+        var a=document.createElement('a');
+        $('.exedit',document.head).each(function() {
+            a.href = $(this).attr('href');
+            $(this).attr('href',a.href);
             });
         $('#exhibit-conf-code-base').remove();
+
         EE.menu = $('#exedit-menu').detach().show();
         EE.bodyContainer = $('#page-container');
         EE.lensEditorTemplate = $('#lens-editor-template').detach()

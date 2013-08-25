@@ -9,16 +9,16 @@
 
 
     <!-- jQuery -->
-    <scropt src="http://code.jquery.com/jquery-1.9.1.js"></scropt>
-    <scropt src="http://code.jquery.com/jquery-migrate-1.2.1.min.js"></scropt>
-    <scropt src="http://code.jquery.com/ui/1.9.2/jquery-ui.js"></scropt>
+    <script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+    <script src="http://code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
+    <script src="http://code.jquery.com/ui/1.9.2/jquery-ui.js"></script>
     <link  class="exedit" rel="stylesheet" href="http://code.jquery.com/ui/1.9.2/themes/smoothness/jquery-ui.css" type="text/css"/>
 
 
     <!-- Aloha -->
     <script>
-      //define('jquery', function() {return window.jQuery;});
-      //define('jqueryui', function() {return window.jQuery.ui;});
+      define('jquery', function() {return window.jQuery;});
+      define('jqueryui', function() {return window.jQuery.ui;});
       Aloha = {settings: {}};
 
       Aloha.settings.sidebar = {disabled: true};
@@ -41,9 +41,6 @@
     <script src="http://cdn.aloha-editor.org/latest/lib/aloha-bare.js"
 	    data-aloha-plugins="common/align,common/block,common/commands,common/format,common/image,common/link,common/paste,common/table,common/undo,common/list"></script>
     <link  class="exedit" rel="stylesheet" href="http://cdn.aloha-editor.org/latest/css/aloha.css"/>
-    <script>
-    $ = jQuery = Aloha.jQuery;
-    </script>
 
     <!-- Exhibit -->
     <script src="http://people.csail.mit.edu/karger/Exhibit3/api/exhibit-api.js?autocreate=false&bundle=false"></script>
@@ -56,12 +53,13 @@
 <!--location of exhibit editor code file. remove after resolving scripts-->
 <base id="exhibit-conf-code-base" href="http://people.csail.mit.edu/karger/EConfDev/"/>
 
-<link  class="exedit" rel="stylesheet" href="menubar.css">
-<link   class="exedit" rel="stylesheet" href="dropdown.css">
-<script class="exedit" src="exconf.js"></script>
-<script class="exedit" src="exedit.js"></script>
-<script class="exedit" src="htmlparser.js"></script>
-<link   class="exedit" rel="stylesheet" href="exconf.css">
+<link class="exedit"  rel="stylesheet" href="menubar.css">
+<link class="exedit"  rel="stylesheet" href="dropdown.css">
+<script src="htmlparser.js"></script>
+<script src="exconf.js"></script>
+<script src="exedit.js"></script>
+<link class="exedit"  rel="stylesheet" href="exconf.css">
+
 
 <title>Exhibit Editor</title>
 
