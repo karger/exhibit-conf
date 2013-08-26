@@ -880,7 +880,6 @@ ExhibitConf.exprSelector = function (props) {
         //better plan: alohaBlock once before editing begins
         //so rerendering doesn't happen here
         EC.rerender();
-//        dom.on('blur',function() {alert('blur'); return true;});
         dom.on('mouseover','.exhibit-editable', showEditWidget);
         dom.on('blur',EC.saveRange);
     };
@@ -1104,7 +1103,7 @@ ExhibitConf.createLensEditor = function(lens, lensContainer) {
 
     addNode = function(node, attr) {
         //remember/restore range since interaction w/dialog clears it
-        //range = Aloha.getSelection(EC.win).getRangeAt(0), 
+        //var range = Aloha.getSelection(EC.win).getRangeAt(0) 
         var range = EC.win.getSelection().getRangeAt(0).cloneRange()
         , insertNodeContent = function() {
             range.insertNode(node.get(0));
