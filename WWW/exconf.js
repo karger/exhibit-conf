@@ -3,7 +3,11 @@
 //Configuration of editor
 ExhibitConf = {};
 
-/* Range protection function */
+/* Range protection function
+I'm having some bizarre problems saving ranges: even when I use
+cloneRange() which supposedly copies by value the cloned range ends up
+mutating as selection changes.  So, hack, manually clone the range.*/
+
 (function () {
     var EC=ExhibitConf
     , rangeData = {doc: document};
@@ -25,16 +29,15 @@ ExhibitConf = {};
     }
     
     EC.getRange = function() {
+        var range;
         try {
-            var range = rangeData.doc.createRange();
-
             if (rangeData.sc) {
+                range = rangeData.doc.createRange();
                 range.setStart(rangeData.sc, rangeData.so);
                 range.setEnd(rangeData.ec, rangeData.eo);
             } 
         } catch(e) {
         }
-
         return range;
     }
 

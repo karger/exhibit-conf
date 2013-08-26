@@ -8,19 +8,19 @@ ExhibitConf.Editor = {
     var EC = ExhibitConf
     , EE = EC.Editor
 
+    /*--------------------------------------------------------
+      Utility Methods
+      --------------------------------------------------------*/
+
     //conf is a mapping from classes (in bar) to functions
     , configureMenuBar = function(bar, conf) {
         /* 
-           Menu interaction messes up the selection.  So it's
-           important to save the selection before menu interaction and
-           restore after.  I'm having some bizarre problems saving
-           ranges: even when I use cloneRange() which supposedly
-           copies by value the cloned range ends up mutating as
-           selection changes.  So, hack, manually clone the range.
+           Menu interaction messes up the selection.  So have to to
+           save the selection before menu interaction and restore after.  
         */
 
         bar.on('click', 'span[class]', function (e) {
-            EC.restoreRange();
+            EC.restoreRange(); 
             var cl = $(this).attr('class');
             if (cl && conf[cl]) {
                 conf[cl]();
@@ -33,268 +33,267 @@ ExhibitConf.Editor = {
             .mouseleave(EC.restoreRange);
     }
 
-    , todo = function() {alert('todo');};
+    , todo = function() {alert('todo');}
 
-    EE.addComponent = function(component, parent) {
-        EC.saveRange();
-        EC.configureElement(component).done(function () {
-            var range = EC.getRange();
-            if (parent) {
-                //insert in specified node
-                parent.append(component);
-            } else {
-                //insert at current selection
-                /* hack: menu access is messing selection
-                   so, record selection whenever menu is accessed
-                   use that recorded selection 
-                   sel = EC.win.getSelection();
-                   if (sel.rangeCount === 0) {
-                   alert('no selection!');
-                   }
-                   range = EC.win.getSelection().getRangeAt(0);
-                   if ($(range.commonAncestorContainer)
-                   .parents('#main').length === 0) {
-                   range = EC.range;
-                   }
-                */
-                //range = EC.getRange()
-                range.deleteContents();
-                range.insertNode(component.get(0));
-                range.detach();
-            }
-            component.alohaBlock();
-            EC.rerender();
-        });
-    };
-    
-    EE.openFile = function() {
-        EC.open().done(EE.beginEdit);
-    };
-
-    EE.openUrl = function (url) {
-        EC.openUrl(url).done(EE.beginEdit);
-    };
-
-    EE.exhibitToHtml = function (doc) {
-        var dom, body;
-
-        EE.preview();  //clean up any current editing
-        dom = $((doc || document).documentElement).clone(true);
-        body = dom.find('#page-container').detach();
-        dom.find('body').empty().append(body.children());
-        EC.unrender(dom);
-        dom.find('.exedit').remove();
-        $('link[rel="exedit/script"]',dom).each(function() {
-            //can't use jquery; it evaluates the scripts
-            this.parentNode
-                .replaceChild($(this).data('exedit-script'),
-                              this);
-        });
-        return '<!DOCTYPE html>\n<html>\n' + dom.html() + '\n</html>';
-    }
-    
-    EE.saveAs = function(d) {
-        //clone(true) to copy data as well.
-        var html = EE.exhibitToHtml()
-            .replace(/(<\/[a-z]*>)/g,'$1\n')  // 'pretty print'
-        , uri = "data:application/octet-stream;charset=utf-8,"
-            + encodeURIComponent('<html>'+html+'</html>')
-        , anchor = $('<a></a>')
-        .attr('href',uri)
-        .attr('download','exhibit.html');
-        $('body').append(anchor); //if not in dom, click fails
-        anchor.get(0).click(); //jquery click doesn't trigger nav. action
-        anchor.remove();
-    };
-
-    EE.addViewPanel = function() {
-        EE.addComponent($('<div data-ex-role="view-panel"></div>')
-                        .attr( 'class','exhibit-editable'));
-    };
-
-    EE.addFacet = function() {
-        EE.addComponent($('<div data-ex-role="facet"></div>')
-                        .attr( 'class','exhibit-editable'));
-    };
-
-    EE.addView = function() {
-        EE.addComponent($('<div data-ex-role="view"></div>')
-                        .attr( 'class','exhibit-editable'));
-    };
-    
     //let an invoked state specify what should happen when we 
     //transition to a different state.
-    EE.cleanup = function(callback) {
+    , cleanup = function(callback) {
         if (EE.cleanupCallback) {
             EE.cleanupCallback();
         }
         EE.cleanupCallback = callback;
     };
 
-    EE.stopEdit = function() {
-        EE.cleanup();
-        EE.bodyContainer.show();
-    };
+    /*-------------------------------------------------------
+      Input/Output
+      --------------------------------------------------------*/
+    (function () {
+        var exhibitToHtml = function (doc) {
+            var dom, body;
+
+            EE.preview();  //clean up any current editing
+            dom = $((doc || document).documentElement).clone(true);
+            body = dom.find('#page-container').detach();
+            dom.find('body').empty().append(body.children());
+            EC.unrender(dom);
+            unresolveUrls(dom);
+            dom.find('.exedit').remove();
+            $('link[rel="exedit/script"]',dom).each(function() {
+                //can't use jquery; it evaluates the scripts
+                this.parentNode
+                    .replaceChild($(this).data('exedit-script'),
+                                  this);
+            });
+            return '<!DOCTYPE html>\n<html>\n' + dom.html() + '\n</html>';
+        }
+
+        // replace current contents being edited with a new document
+        , insertDoc = function(html) {
+            var 
+            clean = html.replace(/<!DOCTYPE[^>]*>/,""),
+            parser = new DOMParser(),
+            script = /script/i,
+            doc = parser.parseFromString(clean, "text/html");
+
+            EE.stopEdit();
+
+            //block script execution in new doc
+            //without disturbing position
+            $('script',doc).each(function () {
+                if (script.test(this.type) || !this.type) {
+                    $('<link rel="exedit/script">')
+                        .data("exedit-script",this)
+                        .replaceAll(this);
+                }
+            });
+
+            if ($('[ex\\:role]',doc).length > 0) {
+                alert("upgrading from exhibit 2 syntax (ex:) to exhibit 3"
+                      +
+                      "(data-ex-).  This will probably lose some information");
+                ExhibitConf.upgradeExhibit(doc);
+            }
+            
+            //can't move elements between docs so must detach first.
+            EE.bodyContainer.empty()
+                .prepend($('body',doc).detach().contents());
+            document.title = "Exedit " + $('title',doc).text();
+            $('head',document).empty()
+                .append($('head',doc).detach().contents());
+        }
+
+        , resolveHashes = function(url, dom) {
+            //exedit runs the exhibit from a different url than the
+            //exhibit being edited.  So, we need to rewrite relative #foo urls
+            //TODO: revise to account for possible presence of <base href> tag
+            var hash = url.indexOf(hash);
+            dom = dom || document;
+            if (hash > 0) {
+                url = url.substring(0,hash);
+            }
+            $('[src]',dom).each(function() {
+                var $this = $(this)
+                , src = $this.attr('src');
+                if (src[0]==="#") {
+                    $(this).attr('data-ex-original-src',src);
+                    $this.attr('src', url+src);
+                }
+            });
+            $('[href]',dom).each(function() {
+                var $this = $(this)
+                , src = $this.attr('href');
+                if (src[0]==="#") {
+                    $(this).attr('data-ex-original-href',src);
+                    $this.attr('href', url+src);
+                }
+            });
+        }
+
+        , unresolveHashes = function(dom) {
+            dom = dom || document;
+            $('[data-ex-original-src]',dom).each(function () {
+                $(this).attr('src',$(this).attr('data-ex-original-src'))
+                    .removeAttr('data-ex-original-src');
+            });
+            $('[data-ex-original-href]',dom).each(function () {
+                $(this).attr('src',$(this).attr('data-ex-original-href'))
+                    .removeAttr('data-ex-original-href');
+            });
+        };
+
+        EE.prepareEdit = function(page, url, data, type) {
+            insertDoc(page);
+            if (url) {
+                resolveHashes(url);
+            }
+            if (data) {
+                setDataLink(data, type);
+            }
+            EE.activate();
+            ExhibitConf.reinit();
+        };
+        
+        EE.newExhibit = function() {
+            EE.prepareEdit(EE.template);
+        };
+
+        EE.openFile = function() {
+            EC.open().done(EE.prepareEdit);
+        };
+
+        EE.openUrl = function (url) {
+            EC.openUrl(url).done(EE.prepareEdit);
+        };
+
+        EE.saveAs = function() {
+            var html = exhibitToHtml()
+                .replace(/(<\/[a-z]*>)/g,'$1\n')  // 'pretty print'
+            , uri = "data:application/octet-stream;charset=utf-8,"
+                + encodeURIComponent('<html>'+html+'</html>')
+            , anchor = $('<a></a>')
+                .attr('href',uri)
+                .attr('download','exhibit.html');
+            $('body').append(anchor); //if not in dom, click fails
+            anchor.get(0).click(); //jquery click doesn't trigger nav. action
+            anchor.remove();
+        };
+    }());
+
+    /*-----------------------------------------------
+      Page editing
+      ----------------------------------------------*/
+    (function () {
+        var addComponent = function(component, parent) {
+            EC.saveRange(); //to recover after dialog interaction
+            EC.configureElement(component).done(function () {
+                var range = EC.getRange();
+                if (parent) {
+                    parent.append(component);
+                } else {
+                    range.deleteContents();
+                    range.insertNode(component.get(0));
+                    range.detach();
+                }
+                component.alohaBlock();
+                EC.rerender();
+            });
+        };
+
+        EE.addViewPanel = function() {
+            addComponent($('<div data-ex-role="view-panel"></div>')
+                         .attr( 'class','exhibit-editable'));
+        };
+
+        EE.addFacet = function() {
+            addComponent($('<div data-ex-role="facet"></div>')
+                         .attr( 'class','exhibit-editable'));
+        };
+
+        EE.addView = function() {
+            addComponent($('<div data-ex-role="view"></div>')
+                         .attr( 'class','exhibit-editable'));
+        };
+
+        EE.stopEdit = function() {
+            cleanup();
+            EE.bodyContainer.show();
+        };
+
+
+        EE.editPage = function() {
+            cleanup(function () {
+                $('.page-insert-menu').hide();
+                ExhibitConf.stopEditPage(EE.bodyContainer);
+                ExhibitConf.rerender();
+            });
+            EE.bodyContainer.show();
+            $('.page-insert-menu').show();
+            ExhibitConf.rerender();
+            ExhibitConf.startEditPage(EE.bodyContainer);
+        };
+
+    }());
 
     EE.preview = function() {
         EE.stopEdit();
         ExhibitConf.rerender();
     };
 
-    EE.startEdit = function() {
-        EE.cleanup(function () {
-            ExhibitConf.stopEditData();
-        });
-        ExhibitConf.startEditData();
-    };
 
-    EE.editPage = function() {
-        EE.cleanup(function () {
-            $('.page-insert-menu').hide();
-            ExhibitConf.stopEditPage(EE.bodyContainer);
-            ExhibitConf.rerender();
-        });
-        EE.bodyContainer.show();
-        $('.page-insert-menu').show();
-        ExhibitConf.rerender();
-        ExhibitConf.startEditPage(EE.bodyContainer);
-    };
-    
-    EE.lensEditor = {};
-    EE.editLens = function() {
-        var lens = $('[data-ex-role="lens"]',EC.win.document)
-        , editContainer = EE.lensEditorTemplate.clone()
-        , lensContainer = $('.lens-editor-lens-container',editContainer);
-
-        EE.cleanup(function () {
-            $('.lens-insert-menu').hide();
-            $(EE.bodyContainer).show();
-            EE.lensEditor.stopEdit();
-            editContainer.remove();
-            ExhibitConf.rerender();
-        });
-
-        editContainer.prependTo(EC.win.document.body).show();
-        EE.lensEditor = ExhibitConf.createLensEditor(lens, lensContainer);
-
-        if (lens.length === 0) {
-            lens = $('<div data-ex-role="lens"></div>');
-        }
-        EE.bodyContainer.hide();
-        $('.lens-insert-menu').show();
-    };
-
-    EE.addLensText = function() {
-        EE.lensEditor.addText();
-    };
-
-    EE.addLensImg = function() {
-        EE.lensEditor.addImg();
-    };
-
-    EE.addLensAnchor = function() {
-        EE.lensEditor.addAnchor();
-    };
-
-    EE.editData = function() {
-        EE.cleanup(function () {
-            ExhibitConf.stopEditData();
-        });
-        ExhibitConf.startEditData();       
-    };
-
-    // replace current contents being edited with a new document
-    EE.insertDoc = function(html) {
-        var 
-        clean = html.replace(/<!DOCTYPE[^>]*>/,""),
-        parser = new DOMParser(),
-        script = /script/i,
-        doc = parser.parseFromString(clean, "text/html");
-
-        EE.stopEdit();
-
-        //block script execution in new doc
-        //without disturbing position
-        $('script',doc).each(function () {
-            if (script.test(this.type) || !this.type) {
-                $('<link rel="exedit/script">')
-                    .data("exedit-script",this)
-                    .replaceAll(this);
-            }
-        });
-
-        if ($('[ex\\:role]',doc).length > 0) {
-            alert("upgrading from exhibit 2 syntax (ex:) to exhibit 3"
-                  +
-                  "(data-ex-).  This will probably lose some information");
-            ExhibitConf.upgradeExhibit(doc);
-        }
-        
-        //can't move elements between docs so must detach first.
-        EE.bodyContainer.empty()
-            .prepend($('body',doc).detach().contents());
-        document.title = "Exedit " + $('title',doc).text();
-        $('head',document).empty()
-            .append($('head',doc).detach().contents());
-    };
-
-    EE.newExhibit = function() {
-        EE.beginEdit(EE.template);
+    EE.visitSimile = function() {
+        window.open('http://www.simile-widgets.org/exhibit');
     };
 
     EE.tutorial = function() {
         window.open("http://people.csail.mit.edu/karger/EConf/exedit.html?page=tutorial.html");
     };
 
-    EE.resolveHashes = function(url, dom) {
-        //exedit runs the exhibit from a different url than the
-        //exhibit being edited.  So, we need to rewrite relative #foo urls
-        //TODO: revise to account for possible presence of <base href> tag
-        var hash = url.indexOf(hash);
-        dom = dom || document;
-        if (hash > 0) {
-            url = url.substring(0,hash);
-        }
-        $('[src]',dom).each(function() {
-            var $this = $(this)
-            , src = $this.attr('src');
-            if (src[0]==="#") {
-                $(this).attr('data-ex-original-src',src);
-                $this.attr('src', url+src);
-            }
-        });
-        $('[href]',dom).each(function() {
-            var $this = $(this)
-            , src = $this.attr('href');
-            if (src[0]==="#") {
-                $(this).attr('data-ex-original-href',src);
-                $this.attr('href', url+src);
-            }
-        });
-    };
+    /* --------------------------------------
+       lens editor menu commands
+       -------------------------------------------*/
+    (function () {
+        EE.lensEditor = {};
+        EE.editLens = function() {
+            var lens = $('[data-ex-role="lens"]',EC.win.document)
+            , editContainer = EE.lensEditorTemplate.clone()
+            , lensContainer = $('.lens-editor-lens-container',editContainer);
 
-    EE.unresolveHashes = function(dom) {
-        dom = dom || document;
-        $('[data-ex-original-src]',dom).each(function () {
-            $(this).attr('src',$(this).attr('data-ex-original-src'))
-                .removeAttr('data-ex-original-src');
-        });
-        $('[data-ex-original-href]',dom).each(function () {
-            $(this).attr('src',$(this).attr('data-ex-original-href'))
-                .removeAttr('data-ex-original-href');
-        });
-    };
+            cleanup(function () {
+                $('.lens-insert-menu').hide();
+                $(EE.bodyContainer).show();
+                EE.lensEditor.stopEdit();
+                editContainer.remove();
+                ExhibitConf.rerender();
+            });
 
-    EE.beginEdit = function(page, url, data, type) {
-        EE.insertDoc(page);
-        if (url) {
-            EE.resolveHashes(url);
-        }
-        if (data) {
-            setDataLink(data, type);
-        }
-        EE.activate();
-        ExhibitConf.reinit();
+            editContainer.prependTo(EC.win.document.body).show();
+            EE.lensEditor = ExhibitConf.createLensEditor(lens, lensContainer);
+
+            if (lens.length === 0) {
+                lens = $('<div data-ex-role="lens"></div>');
+            }
+            EE.bodyContainer.hide();
+            $('.lens-insert-menu').show();
+        };
+
+        EE.addLensText = function() {
+            EE.lensEditor.addText();
+        };
+
+        EE.addLensImg = function() {
+            EE.lensEditor.addImg();
+        };
+
+        EE.addLensAnchor = function() {
+            EE.lensEditor.addAnchor();
+        };
+    }());
+
+    EE.editData = function() {
+        cleanup(function () {
+            ExhibitConf.stopEditData();
+        });
+        ExhibitConf.startEditData();       
     };
 
     EE.init = function() {
@@ -303,7 +302,7 @@ ExhibitConf.Editor = {
         $('.exedit',document.head).each(function() {
             a.href = $(this).attr('href');
             $(this).attr('href',a.href);
-            });
+        });
         $('#exhibit-conf-code-base').remove();
 
         EE.menu = $('#exedit-menu').detach().show();
@@ -317,49 +316,45 @@ ExhibitConf.Editor = {
         ExhibitConf.win = window;
 
         Aloha.require(['ui/ui', 'ui/button'], function(Ui, Button) {
-                Ui.adopt("addFacet", Button, {
-                        text: "add facet",
-                        click: EE.addFacet
-                    });
-                Ui.adopt("addView", Button, {
-                        text: "add view",
-                        click: EE.addView
-                    });
-                Ui.adopt("addViewPanel", Button, {
-                        text: "add view panel",
-                        click: EE.addViewPanel
-                    });
+            Ui.adopt("addFacet", Button, {
+                text: "add facet",
+                click: EE.addFacet
             });
+            Ui.adopt("addView", Button, {
+                text: "add view",
+                click: EE.addView
+            });
+            Ui.adopt("addViewPanel", Button, {
+                text: "add view panel",
+                click: EE.addViewPanel
+            });
+        });
     };
     
-    EE.visitSimile = function() {
-        window.open('http://www.simile-widgets.org/exhibit');
-    };
-
     EE.activate = function() {
         var menu = EE.menu.clone()
         , spacer=$('<div id="exedit-spacer" class="exedit"></div>');
         configureMenuBar(menu, 
-                      {"new-button": EE.newExhibit,
-                       "open-button": EE.openFile,
-                       "open-url-button": EE.openUrl,
-                       "save-button": EE.saveAs,
-                       "preview-button": EE.stopEdit,
-                       "edit-exhibit-button": EE.editPage,
-                       "edit-lens-button": EE.editLens,
-                       "edit-links-button": ExhibitConf.editDataLinks,
-                       "edit-data-button": EE.editData,
-                       "help-button": todo,
-                       "tutorial-button": EE.tutorial,
-                       "wizard-button": todo,
-                       "simile-button": EE.visitSimile,
-                       "add-view-button": EE.addView,
-                       "add-view-panel-button": EE.addViewPanel,
-                       "add-facet-button": EE.addFacet,
-                       "add-content-button": EE.addLensText,
-                       "add-link-button": EE.addLensAnchor,
-                       "add-img-button": EE.addLensImg
-                      });
+                         {"new-button": EE.newExhibit,
+                          "open-button": EE.openFile,
+                          "open-url-button": EE.openUrl,
+                          "save-button": EE.saveAs,
+                          "preview-button": EE.stopEdit,
+                          "edit-exhibit-button": EE.editPage,
+                          "edit-lens-button": EE.editLens,
+                          "edit-links-button": ExhibitConf.editDataLinks,
+                          "edit-data-button": EE.editData,
+                          "help-button": todo,
+                          "tutorial-button": EE.tutorial,
+                          "wizard-button": todo,
+                          "simile-button": EE.visitSimile,
+                          "add-view-button": EE.addView,
+                          "add-view-panel-button": EE.addViewPanel,
+                          "add-facet-button": EE.addFacet,
+                          "add-content-button": EE.addLensText,
+                          "add-link-button": EE.addLensAnchor,
+                          "add-img-button": EE.addLensImg
+                         });
         $('.lens-insert-menu',menu).hide();
         $('.page-insert-menu',menu).hide();
         EE.headStuff.appendTo(EC.win.document.head);
@@ -421,9 +416,9 @@ ExhibitConf.Editor = {
         } else {
             fetchPage = fetchTemplate;
         }
-                     
+        
         fetchPage.done(function(page) {
-            EE.beginEdit(page, urlArgs.page, urlArgs.data, urlArgs.type);
+            EE.prepareEdit(page, urlArgs.page, urlArgs.data, urlArgs.type);
         })
             .fail(function() {
                 alert("Failed to load " + (urlArgs.page || 
