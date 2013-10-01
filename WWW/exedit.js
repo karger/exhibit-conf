@@ -7,7 +7,10 @@ ExhibitConf.Editor = {
 (function () {
     var EC = ExhibitConf
     , EE = EC.Editor
-
+    , manifest = {
+        scripts: [],
+        css: []
+    }
     /*--------------------------------------------------------
       Utility Methods
       --------------------------------------------------------*/
@@ -19,6 +22,9 @@ ExhibitConf.Editor = {
            save the selection before menu interaction and restore after.  
         */
 
+        bar.mouseenter(EC.saveRange)
+            .mouseleave(EC.restoreRange);
+
         bar.on('click', 'span[class]', function (e) {
             EC.restoreRange(); 
             var cl = $(this).attr('class');
@@ -27,22 +33,50 @@ ExhibitConf.Editor = {
             }
             return false; //prevent propagation
         });
-        //something in menu interaction destroys (even cloned) ranges
-        //so we need a contorted save-by-value method
-        bar.mouseenter(EC.saveRange)
-            .mouseleave(EC.restoreRange);
     }
 
     , todo = function() {alert('todo');}
 
-    //let an invoked state specify what should happen when we 
-    //transition to a different state.
+    //let an entering state specify what should happen when we 
+    //transition to a different state (and invoke the cleanup for the
+    //exiting state).
     , cleanup = function(callback) {
         if (EE.cleanupCallback) {
             EE.cleanupCallback();
         }
         EE.cleanupCallback = callback;
     };
+
+    /*-------------------------------------------------------
+      script loading methods
+      --------------------------------------------------------*/
+
+    (function () {
+        var codeBase = "";
+        
+        EC.findScript = function (name) {
+            var found;
+            $('script').each(function() {
+                var src = $(this).attr(src);
+                if (src.indexOf(name) !== -1) {
+                    found = src;
+                }
+            });
+            return found;
+        }
+
+        EC.addScript = function(name) {
+            $('<script></script>')
+                .attr('src',codeBase+name)
+                .appendTo('head');
+        }
+
+        EC.addCss = function(name) {
+            $('<link class="exedit" rel="stylesheet" type="text/css"></link>')
+                .attr('href',codeBase+name)
+                .appendTo('head');
+        }
+    }());
 
     /*-------------------------------------------------------
       Input/Output
@@ -104,7 +138,9 @@ ExhibitConf.Editor = {
 
         , resolveHashes = function(url, dom) {
             //exedit runs the exhibit from a different url than the
-            //exhibit being edited.  So, we need to rewrite relative #foo urls
+            //exhibit being edited.  So, we need to rewrite relative #foo urls.
+            //Since the editor is assumed in same directory as exhibit
+            //being edited, any other relative urls will resolve correctly
             //TODO: revise to account for possible presence of <base href> tag
             var hash = url.indexOf(hash);
             dom = dom || document;
@@ -254,7 +290,7 @@ ExhibitConf.Editor = {
     (function () {
         EE.lensEditor = {};
         EE.editLens = function() {
-            var lens = $('[data-ex-role="lens"]',EC.win.document)
+            var lens = $('[data-ex-role="lens"]')
             , editContainer = EE.lensEditorTemplate.clone()
             , lensContainer = $('.lens-editor-lens-container',editContainer);
 
@@ -266,7 +302,7 @@ ExhibitConf.Editor = {
                 ExhibitConf.rerender();
             });
 
-            editContainer.prependTo(EC.win.document.body).show();
+            editContainer.prependTo(document.body).show();
             EE.lensEditor = ExhibitConf.createLensEditor(lens, lensContainer);
 
             if (lens.length === 0) {
@@ -357,8 +393,8 @@ ExhibitConf.Editor = {
                          });
         $('.lens-insert-menu',menu).hide();
         $('.page-insert-menu',menu).hide();
-        EE.headStuff.appendTo(EC.win.document.head);
-        menu.prependTo(EC.win.document.body);
+        EE.headStuff.appendTo(document.head);
+        menu.prependTo(document.body);
         $('#exedit-spacer').remove(); //any old one
         spacer.height(menu.height()).insertAfter(menu);
     };
@@ -403,26 +439,28 @@ ExhibitConf.Editor = {
                                  {dataType: "text"})
         ;
 
-        EC.init();
-        EE.init();
+        Aloha.ready(function() {
+            EC.init();
+            EE.init();
 
-        fetchTemplate.done(function(page) {EE.template = page;})
-            .fail(function() {
-                EE.template="<html><head></head><body>Edit this.</body>";
-            });
+            fetchTemplate.done(function(page) {EE.template = page;})
+                .fail(function() {
+                    EE.template="<html><head></head><body>Edit this.</body>";
+                });
 
-        if (urlArgs.page) {
-            fetchPage = $.ajax(urlArgs.page, {dataType: "text"});
-        } else {
-            fetchPage = fetchTemplate;
-        }
-        
-        fetchPage.done(function(page) {
-            EE.prepareEdit(page, urlArgs.page, urlArgs.data, urlArgs.type);
-        })
-            .fail(function() {
-                alert("Failed to load " + (urlArgs.page || 
-                                           "new document template"));
-            });
+            if (urlArgs.page) {
+                fetchPage = $.ajax(urlArgs.page, {dataType: "text"});
+            } else {
+                fetchPage = fetchTemplate;
+            }
+            
+            fetchPage.done(function(page) {
+                EE.prepareEdit(page, urlArgs.page, urlArgs.data, urlArgs.type);
+            })
+                .fail(function() {
+                    alert("Failed to load " + (urlArgs.page || 
+                                               "new document template"));
+                });
+        });
     });
 }());

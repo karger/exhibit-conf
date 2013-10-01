@@ -13,7 +13,7 @@ mutating as selection changes.  So, hack, manually clone the range.*/
     , rangeData = {doc: document};
     
     EC.saveRange = function() {
-        var sel = EC.win.getSelection()
+        var sel = window.getSelection()
         , range;
 
         if (sel.rangeCount > 0) {
@@ -55,10 +55,12 @@ mutating as selection changes.  So, hack, manually clone the range.*/
     var EC = ExhibitConf;
 
     EC.unrender = function(dom) {
-        dom = $(dom || EC.win.document);
+        dom = $(dom || window.document);
         dom.find('.exhibit-controlPanel').remove();
         dom.find('.exhibit-toolboxWidget-popup').remove();
-        dom.find('[data-ex-role="facet"]').empty().removeClass('exhibit-facet');
+        dom.find('[data-ex-role="facet"]')
+            .removeClass('exhibit-facet')
+            .empty();
         dom.find('[data-ex-role="view"]')
             .removeClass('exhibit-view')
             .children()
@@ -71,26 +73,27 @@ mutating as selection changes.  So, hack, manually clone the range.*/
         dom.find('.exconf-no-id').removeAttr('id');
     };
 
-    EC.rerender = function(win) {
-        win = win || EC.win;
-        EC.unrender(win.document);
-        if (win.Exhibit && win.Exhibit.History.enabled) {
-            win.Exhibit.History.eraseState();
+    EC.rerender = function() {
+        var exhibit = window.exhibit;
+        EC.unrender(document);
+        if (window.Exhibit && window.Exhibit.History.enabled) {
+            window.Exhibit.History.eraseState();
             }
-        if (win.exhibit._uiContext) {
+        if (exhibit._uiContext) {
             //sledgehammer to clear old state
-            win.exhibit._uiContext =
-                Exhibit.UIContext.createRootContext({},win.exhibit);
+            exhibit._uiContext =
+                Exhibit.UIContext.createRootContext({},exhibit);
         }
-        win.exhibit._collectionMap = {};
-        win.exhibit.configureFromDOM();
+        exhibit._collectionMap = {};
+        exhibit.configureFromDOM();
     };
 
-    EC.reinit = function(win) {
-        var killFacets = function(w) {
+    EC.reinit = function() {
+        var killFacets = function() {
             var i
-            , facets = w && w.exhibit && w.exhibit.getUIContext
-                && w.exhibit.getUIContext().getCollection()._facets;
+            , exhibit = window.exhibit
+            , facets = exhibit && exhibit.getUIContext
+                && exhibit.getUIContext().getCollection()._facets;
             
             if (facets) {
                 for (i=0; i<facets.length; i++) {
@@ -99,18 +102,17 @@ mutating as selection changes.  So, hack, manually clone the range.*/
             }
         };
 
-        win = win || EC.win;
-        killFacets(win);
-        EC.unrender(win.document);
-        if (win.Exhibit.History.enabled) {
-            win.Exhibit.History.eraseState();
+        killFacets();
+        EC.unrender(document);
+        if (window.Exhibit.History.enabled) {
+            window.Exhibit.History.eraseState();
             }
         $(document).one('dataload.exhibit',function() {
             //need to set proper 'this" on configure call
             //so can't just pass configureFromDOM to loadLinks
-            win.exhibit.configureFromDOM();
+            exhibit.configureFromDOM();
         });
-        win.database.loadLinks();
+        window.database.loadLinks();
     };
 
     EC.open = function() {
@@ -399,7 +401,7 @@ ExhibitConf.exprSelector = function (props) {
                 return choices;
             },
             exprInput = function(state) {
-                var inp = ExhibitConf.exprSelector(EC.win.database
+                var inp = ExhibitConf.exprSelector(window.database
                                                    .getAllProperties());
                 if (state) {inp.val(state);}
                 return inp;
@@ -501,13 +503,13 @@ ExhibitConf.exprSelector = function (props) {
     EC.configureElement = function(elt) {
         var specs, cleanSpecs, comp, className, title, field, eField, promise,
         settings = {},
-        role = EC.win.Exhibit.getRoleAttribute(elt);
+        role = window.Exhibit.getRoleAttribute(elt);
 
         switch(role) {
         case "view": 
             comp = "views";
             title = "Configure View";
-            className = EC.win.Exhibit.getAttribute(elt,"viewClass") 
+            className = window.Exhibit.getAttribute(elt,"viewClass") 
                 || "TileView";
             if (!className.endsWith("View")) {
                 className += "View";
@@ -516,7 +518,7 @@ ExhibitConf.exprSelector = function (props) {
         case "facet":
             comp = "facets";
             title = "Configure Facet";
-            className = EC.win.Exhibit.getAttribute(elt,"facetClass") 
+            className = window.Exhibit.getAttribute(elt,"facetClass") 
                 || "ListFacet";
             if (!className.endsWith("Facet")) {
                 className += "Facet";
@@ -540,7 +542,7 @@ ExhibitConf.exprSelector = function (props) {
                 cleanSpecs[field].type='text';
                 }
         }
-        EC.win.Exhibit.SettingsUtilities.collectSettingsFromDOM(elt, cleanSpecs, settings);
+        window.Exhibit.SettingsUtilities.collectSettingsFromDOM(elt, cleanSpecs, settings);
 
         if (className) {
             settings.className = className;
@@ -764,7 +766,7 @@ ExhibitConf.exprSelector = function (props) {
 
     , findFacet = function (elt,win) {
         var i, 
-        collection = (win||EC.win).exhibit.getUIContext().getCollection(),
+        collection = (win||window).exhibit.getUIContext().getCollection(),
         facets = collection._facets;
 
         elt = elt.get(0);
@@ -779,7 +781,7 @@ ExhibitConf.exprSelector = function (props) {
     }
 
     , markExhibit = function(dom) {
-        dom = $(dom || EC.win.document.body);
+        dom = $(dom || window.document.body);
         $('[data-ex-role="view"]',dom).addClass('exhibit-editable');
         $('[data-ex-role="facet"]',dom).addClass('exhibit-editable');
         $('[data-ex-role="viewPanel"]',dom).addClass('exhibit-editable');
@@ -790,7 +792,7 @@ ExhibitConf.exprSelector = function (props) {
     }
 
     , unMarkExhibit = function(dom) {
-        dom = $(dom || EC.win.document.body);
+        dom = $(dom || window.document.body);
         $('[data-ex-role="view"]',dom).removeClass('exhibit-editable');
         $('[data-ex-role="facet"]',dom).removeClass('exhibit-editable');
         $('[data-ex-role="viewanel"]',dom).removeClass('exhibit-editable');
@@ -806,7 +808,7 @@ ExhibitConf.exprSelector = function (props) {
         event.stopImmediatePropagation();
         EC.configureElement(elt).done(function () {
             var f;
-            if (EC.win.Exhibit.getRoleAttribute(elt) === 'facet') {
+            if (window.Exhibit.getRoleAttribute(elt) === 'facet') {
                 f = findFacet(elt);
                 if (f) {
                     f.dispose();
@@ -856,7 +858,7 @@ ExhibitConf.exprSelector = function (props) {
 
     EC.startEditPage = function(dom) {
         markExhibit(dom);
-        //      $(EC.win.document.body)
+        //      $(window.document.body)
         //          .wrapInner('<div class="exhibit-wrapper"></div>');
         dom.addClass('exhibit-editing');
         $('.exhibit-editable',dom).alohaBlock();
@@ -933,20 +935,26 @@ ExhibitConf.editDataLinks = function() {
         for (i=0; i<importers.length; i++) {
             $('<option/>').text(importers[i]).appendTo(options);
         }
+        $('<option/>').text('google spreadsheet').appendTo(options);
         return options;
     }
 
     , saveLinks = function() {
-        $("link[rel=exhibit-data]").remove();
+        $("link[rel=exhibit-data]").add('link[rel="exhibit/data"]').remove();
         $('.linkFields',this).find("tr").slice(0,-1).each(function() {
             var parts=$(this).find("td")
             , href=parts.eq(0).children().val().trim()
-            , type=parts.eq(1).children().val();
+            , type=parts.eq(1).children().val()
+            , link = $('<link rel="exhibit-data">')
+                .attr('href',href)
+                .attr('type',type)
+            ;
+            if (type == "google spreadsheet") {
+                link.attr('data-ex-converter',"googleSpreadsheets");
+                link.attr('type','application/jsonp');
+            }
             if (href) {
-                $('<link rel="exhibit-data">')
-                    .attr('href',href)
-                    .attr('type',type)
-                    .appendTo('head');
+                    link.appendTo('head');
             }
         });
         $(this).dialog('close');
@@ -976,17 +984,20 @@ ExhibitConf.editDataLinks = function() {
         };
 
         linkFields.empty();
-        $('link[rel="exhibit-data"]')
+        $('link[rel="exhibit-data"]').add('link[rel="exhibit/data"]')
             .each(function() {
-                var val= $('<input type="textfield"></input>')
+                var typeSelector = EC.dataMimeTypes.clone()
+                , row = $('<input type="textfield"></input>')
                     .val($(this).attr('href'))
-                    .wrap("<td>").parent().wrap("<tr>").parent()
-                    .append(
-                        EC.dataMimeTypes.clone()
-                            .val($(this).attr("type"))
-                            .wrap("<td>").parent())
-                    .append(button.clone(true));
-                linkFields.append(val);
+                    .wrap("<td/>").parent().wrap("<tr/>").parent()
+                    .append(typeSelector.wrap("<td/>").parent())
+                    .append(button.clone(true))
+                , currentType = $(this).attr("type");
+                if ($(this).attr("data-ex-converter") == "googleSpreadsheets") {
+                    currentType = "google spreadsheet";
+                }
+                typeSelector.val(currentType);
+                linkFields.append(row);
             });
         addBlankLine();
         EC.dataDialog.dialog('open');
@@ -1027,7 +1038,7 @@ ExhibitConf.createLensEditor = function(lens, lensContainer) {
     //lensContainer should be in exhibit document, to inherit styles etc.
     var EC = ExhibitConf,
     editor = {},
-    props = EC.win.database.getAllProperties(),
+    props = window.database.getAllProperties(),
     
     alohaEditor = Aloha.jQuery(lensContainer.get(0)).empty(),
     cleanAlohaEditor = function() {
@@ -1106,8 +1117,8 @@ ExhibitConf.createLensEditor = function(lens, lensContainer) {
 
     addNode = function(node, attr) {
         //remember/restore range since interaction w/dialog clears it
-        //var range = Aloha.getSelection(EC.win).getRangeAt(0) 
-        var range = EC.win.getSelection().getRangeAt(0).cloneRange()
+        //var range = Aloha.getSelection(window).getRangeAt(0) 
+        var range = window.getSelection().getRangeAt(0).cloneRange()
         , insertNodeContent = function() {
             range.insertNode(node.get(0));
         };
@@ -1165,7 +1176,7 @@ ExhibitConf.startEditData = function() {
         
         //identify item being edited
         , id = node.parents('[' + idAttr + ']').attr(idAttr)
-        , database = EC.win.database
+        , database = window.database
 
         //current value of attribute
         , results = expr.evaluateOnItem(id, database)
@@ -1203,7 +1214,7 @@ ExhibitConf.startEditData = function() {
                     }
                 }
             }
-            $(EC.win.exhibit.getUIContext().getCollection().onFacetUpdated());
+            $(window.exhibit.getUIContext().getCollection().onFacetUpdated());
 //                .trigger('onItemsChanged.exhibit');
 //            ExhibitConf.rerender();
         };
@@ -1229,13 +1240,13 @@ ExhibitConf.startEditData = function() {
         }
     };
 
-    $('body',EC.win.document)
+    $('body')
         .addClass('exhibit-editing-data')
         .on('click.exconf','[data-ex-content]',beginEdit);
 };
 
 ExhibitConf.stopEditData = function() {
-    $('body',ExhibitConf.win.document)
+    $('body')
         .removeClass('exhibit-editing-data')
         .off('click.exconf','[data-ex-content]');
 };
