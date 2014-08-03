@@ -302,7 +302,7 @@ ExhibitConf.Editor = {
                 ExhibitConf.rerender();
             });
 
-            editContainer.prependTo(document.body).show();
+            editContainer.insertAfter('#exedit-spacer').show();
             EE.lensEditor = ExhibitConf.createLensEditor(lens, lensContainer);
 
             if (lens.length === 0) {
